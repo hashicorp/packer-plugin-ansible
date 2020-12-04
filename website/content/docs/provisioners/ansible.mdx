@@ -25,7 +25,6 @@ accept jinja2 `{{ function }}` macro syntax in a way that can be preserved to
 the Ansible run. If you need to set variables using Ansible macros, you need to
 do so inside your playbooks or inventory files.
 
-
 Please see the [Debugging](#debugging), [Limitations](#limitations), or [Troubleshooting](#troubleshooting) if you are having trouble
 getting started.
 
@@ -347,6 +346,7 @@ explicitly not use any proxying; you can do this by setting the template option
 ```json
 "ansible_env_vars": ["no_proxy=\"*\""],
 ```
+
 </Tab>
 <Tab heading="HCL2">
 
@@ -525,6 +525,7 @@ The ansible provisioner template remains very simple. For example:
   "playbook_file": "./playbook.yml"
 }
 ```
+
 </Tab>
 <Tab heading="HCL2">
 
@@ -565,26 +566,36 @@ Example Packer template:
     "ansible_host": "default",
     "ansible_connection": "docker"
   },
-  "builders":[
+  "builders": [
     {
       "type": "docker",
       "image": "centos:7",
       "commit": true,
-      "run_command": [ "-d", "-i", "-t", "--name", "{{user `ansible_host`}}", "{{.Image}}", "/bin/bash" ]
+      "run_command": [
+        "-d",
+        "-i",
+        "-t",
+        "--name",
+        "{{user `ansible_host`}}",
+        "{{.Image}}",
+        "/bin/bash"
+      ]
     }
   ],
   "provisioners": [
     {
       "type": "ansible",
-      "groups": [ "webserver" ],
+      "groups": ["webserver"],
       "playbook_file": "./webserver.yml",
       "extra_arguments": [
-        "--extra-vars", "ansible_host={{user `ansible_host`}} ansible_connection={{user `ansible_connection`}}"
+        "--extra-vars",
+        "ansible_host={{user `ansible_host`}} ansible_connection={{user `ansible_connection`}}"
       ]
     }
   ]
 }
 ```
+
 </Tab>
 <Tab heading="HCL2">
 
@@ -681,6 +692,7 @@ their configured region.
       inventory_file_template =  "{{ .HostAlias }} ansible_host={{ .ID }} ansible_user={{ .User }} ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand=\"sh -c \\\"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p\\\"\"'\n"
     }
 ```
+
 </Tab>
 </Tabs>
 
@@ -696,39 +708,36 @@ Full Packer template example:
   },
 
   "builders": [
-      {
-        "type": "amazon-ebs",
-        "region": "us-east-1",
-        "ami_name": "packer-ami-ansible",
-        "instance_type": "t2.micro",
-        "source_ami_filter": {
-            "filters": {
-                "virtualization-type": "hvm",
-                "name": "ubuntu/images/*ubuntu-xenial-16.04-amd64-server-*",
-                "root-device-type": "ebs"
-            },
-            "owners": [
-                "099720109477"
-            ],
-            "most_recent": true
+    {
+      "type": "amazon-ebs",
+      "region": "us-east-1",
+      "ami_name": "packer-ami-ansible",
+      "instance_type": "t2.micro",
+      "source_ami_filter": {
+        "filters": {
+          "virtualization-type": "hvm",
+          "name": "ubuntu/images/*ubuntu-xenial-16.04-amd64-server-*",
+          "root-device-type": "ebs"
         },
-        "communicator": "ssh",
-        "ssh_username": "ubuntu",
-        "ssh_interface": "session_manager",
-        "iam_instance_profile":"{{user `instance_role`}}"
-      }
+        "owners": ["099720109477"],
+        "most_recent": true
+      },
+      "communicator": "ssh",
+      "ssh_username": "ubuntu",
+      "ssh_interface": "session_manager",
+      "iam_instance_profile": "{{user `instance_role`}}"
+    }
   ],
   "provisioners": [
     {
       "type": "ansible",
       "use_proxy": false,
       "ansible_env_vars": ["PACKER_BUILD_NAME={{ build_name }}"],
-      "playbook_file":   "./playbooks/playbook_remote.yml",
+      "playbook_file": "./playbooks/playbook_remote.yml",
       "inventory_file_template": "{{ .HostAlias }} ansible_host={{ .ID }} ansible_user={{ .User }} ansible_ssh_common_args='-o StrictHostKeyChecking=no -o ProxyCommand=\"sh -c \\\"aws ssm start-session --target %h --document-name AWS-StartSSHSession --parameters portNumber=%p\\\"\"'\n"
     }
-	]
+  ]
 }
-
 ```
 
 </Tab>
