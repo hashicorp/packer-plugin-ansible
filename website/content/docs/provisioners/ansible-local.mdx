@@ -5,7 +5,6 @@ description: >
   guest VM. This means ansible must be installed on the remote/guest VM.
   Playbooks and Roles can be uploaded from your build machine (the one running
   Packer) to the vm.
-layout: docs
 page_title: Ansible Local - Provisioners
 sidebar_title: Ansible Local
 ---
@@ -37,25 +36,27 @@ The example below is fully functional.
 
 ```json
 {
-    "builders": [
-      {
-          "type":        "docker",
-          "image":       "williamyeh/ansible:ubuntu14.04",
-          "export_path": "packer_example",
-          "run_command": [ "-d", "-i", "-t", "--entrypoint=/bin/bash", "{{.Image}}" ]
-      }
-    ],
-    "variables":
-      {
-        "topping": "mushroom"
-      },
-    "provisioners": [
-      {
-        "type":            "ansible-local",
-        "playbook_file":   "./playbook.yml",
-        "extra_arguments": ["--extra-vars", "\"pizza_toppings={{ user `topping`}}\""]
-      }
-    ]
+  "builders": [
+    {
+      "type": "docker",
+      "image": "williamyeh/ansible:ubuntu14.04",
+      "export_path": "packer_example",
+      "run_command": ["-d", "-i", "-t", "--entrypoint=/bin/bash", "{{.Image}}"]
+    }
+  ],
+  "variables": {
+    "topping": "mushroom"
+  },
+  "provisioners": [
+    {
+      "type": "ansible-local",
+      "playbook_file": "./playbook.yml",
+      "extra_arguments": [
+        "--extra-vars",
+        "\"pizza_toppings={{ user `topping`}}\""
+      ]
+    }
+  ]
 }
 ```
 
