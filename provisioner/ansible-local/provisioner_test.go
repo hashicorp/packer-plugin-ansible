@@ -9,12 +9,8 @@ import (
 	"testing"
 
 	"fmt"
-	"os/exec"
 
-	"github.com/hashicorp/packer-plugin-docker/builder/docker"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
-	builderT "github.com/hashicorp/packer/acctest"
-	"github.com/hashicorp/packer/provisioner/file"
 )
 
 func TestProvisioner_Impl(t *testing.T) {
@@ -315,53 +311,6 @@ func TestProvisionerPrepare_CleanStagingDir(t *testing.T) {
 	}
 }
 
-func TestProvisionerProvisionDocker_PlaybookFiles(t *testing.T) {
-	testProvisionerProvisionDockerWithPlaybookFiles(t, playbookFilesDockerTemplate)
-}
-
-func TestProvisionerProvisionDocker_PlaybookFilesWithPlaybookDir(t *testing.T) {
-	testProvisionerProvisionDockerWithPlaybookFiles(t, playbookFilesWithPlaybookDirDockerTemplate)
-}
-
-func testProvisionerProvisionDockerWithPlaybookFiles(t *testing.T, templateString string) {
-	if os.Getenv("PACKER_ACC") == "" {
-		t.Skip("This test is only run with PACKER_ACC=1")
-	}
-
-	// this should be a precheck
-	cmd := exec.Command("docker", "-v")
-	err := cmd.Run()
-	if err != nil {
-		t.Error("docker command not found; please make sure docker is installed")
-	}
-
-	builderT.Test(t, builderT.TestCase{
-		Builder:  &docker.Builder{},
-		Template: templateString,
-		Check: func(a []packersdk.Artifact) error {
-
-			actualContent, err := ioutil.ReadFile("hello_world")
-			if err != nil {
-				return fmt.Errorf("Expected file not found: %s", err)
-			}
-
-			expectedContent := "Hello world!"
-			if string(actualContent) != expectedContent {
-				return fmt.Errorf(`Unexpected file content: expected="%s", actual="%s"`, expectedContent, actualContent)
-			}
-			return nil
-		},
-		Teardown: func() error {
-			os.Remove("hello_world")
-			return nil
-		},
-		ProvisionerStore: packersdk.MapOfProvisioner{
-			"ansible-local": func() (packersdk.Provisioner, error) { return &Provisioner{}, nil },
-			"file":          func() (packersdk.Provisioner, error) { return &file.Provisioner{}, nil },
-		},
-	})
-}
-
 func assertPlaybooksExecuted(comm *communicatorMock, playbooks []string) {
 	cmdIndex := 0
 	for _, playbook := range playbooks {
@@ -440,58 +389,3 @@ func removeFiles(files ...string) {
 		os.Remove(file)
 	}
 }
-
-const playbookFilesDockerTemplate = `
-{
-	"builders": [
-		{
-			"type": "test",
-			"image": "williamyeh/ansible:centos7",
-			"discard": true
-		}
-	],
-	"provisioners": [
-		{
-			"type": "ansible-local",
-			"playbook_files": [
-				"test-fixtures/hello.yml",
-				"test-fixtures/world.yml"
-			]
-		},
-		{
-			"type": "file",
-			"source": "/tmp/hello_world",
-			"destination": "hello_world",
-			"direction": "download"
-		}
-	]
-}
-`
-
-const playbookFilesWithPlaybookDirDockerTemplate = `
-{
-	"builders": [
-		{
-			"type": "test",
-			"image": "williamyeh/ansible:centos7",
-			"discard": true
-		}
-	],
-	"provisioners": [
-		{
-			"type": "ansible-local",
-			"playbook_files": [
-				"test-fixtures/hello.yml",
-				"test-fixtures/world.yml"
-			],
-			"playbook_dir": "test-fixtures"
-		},
-		{
-			"type": "file",
-			"source": "/tmp/hello_world",
-			"destination": "hello_world",
-			"direction": "download"
-		}
-	]
-}
-`

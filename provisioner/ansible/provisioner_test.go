@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
@@ -303,56 +302,6 @@ func TestProvisionerPrepare_InventoryDirectory(t *testing.T) {
 
 	config["inventory_directory"] = inventoryDirectory
 	err = p.Prepare(config)
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-}
-
-func TestAnsibleGetVersion(t *testing.T) {
-	if os.Getenv("PACKER_ACC") == "" {
-		t.Skip("This test is only run with PACKER_ACC=1 and it requires Ansible to be installed")
-	}
-
-	var p Provisioner
-	p.config.Command = "ansible-playbook"
-	err := p.getVersion()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-}
-
-func TestAnsibleGetVersionError(t *testing.T) {
-	var p Provisioner
-	p.config.Command = "./test-fixtures/exit1"
-	err := p.getVersion()
-	if err == nil {
-		t.Fatal("Should return error")
-	}
-	if !strings.Contains(err.Error(), "./test-fixtures/exit1 --version") {
-		t.Fatal("Error message should include command name")
-	}
-}
-
-func TestAnsibleLongMessages(t *testing.T) {
-	if os.Getenv("PACKER_ACC") == "" {
-		t.Skip("This test is only run with PACKER_ACC=1 and it requires Ansible to be installed")
-	}
-
-	var p Provisioner
-	p.config.Command = "ansible-playbook"
-	p.config.PlaybookFile = "./test-fixtures/long-debug-message.yml"
-	err := p.Prepare()
-	if err != nil {
-		t.Fatalf("err: %s", err)
-	}
-
-	comm := &packersdk.MockCommunicator{}
-	ui := &packersdk.BasicUi{
-		Reader: new(bytes.Buffer),
-		Writer: new(bytes.Buffer),
-	}
-
-	err = p.Provision(context.Background(), ui, comm, make(map[string]interface{}))
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}

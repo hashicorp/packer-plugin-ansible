@@ -1,4 +1,4 @@
-NAME=scaffolding
+NAME=ansible
 BINARY=packer-plugin-${NAME}
 
 COUNT?=1
