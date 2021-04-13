@@ -1,11 +1,11 @@
 # Content Files Directory
 
-The contents of this directory contains raw plugins documentation files and partials that can
+The contents of this directory contains raw plugin documentation files and partials that can
 be used with the `packer-sdc renderdocs` command to auto generate full docs for one or more components.
 
 | Directory contents | Description |
 -----
-|partials/ | Shared documents that can be included in one or doc files |
+|partials/ | Shared documents that can be included in one or more doc files |
 |docs/[builders|datasources|provivisoners|post-processers]/\*.mdx |  Generic documentation files for the respective components |
 |docs/README.md | Default README to include as GitHub index for docs directory|
 
