@@ -4,9 +4,9 @@ The contents of this directory contains raw plugin documentation files and parti
 be used with the `packer-sdc renderdocs` command to auto generate full docs for one or more components.
 
 | Directory contents | Description |
------
-|partials/ | Shared documents that can be included in one or more doc files |
-|docs/[builders|datasources|provivisoners|post-processers]/\*.mdx |  Generic documentation files for the respective components |
+|:------------- |:-------------|
+|partials/\*\*/\*.mdx | Shared documents that can be included in one or more doc files |
+|docs/component/\*.mdx |  Generic documentation files for the respective components (i.e builders, datasources, provisioners, post-processors)|
 |docs/README.md | Default README to include as GitHub index for docs directory|
 
 
