@@ -39,8 +39,7 @@ func testConfig(t *testing.T) map[string]interface{} {
 }
 
 func TestProvisioner_Impl(t *testing.T) {
-	var raw interface{}
-	raw = &Provisioner{}
+	var raw interface{} = &Provisioner{}
 	if _, ok := raw.(packersdk.Provisioner); !ok {
 		t.Fatalf("must be a Provisioner")
 	}
@@ -386,7 +385,10 @@ default ansible_ssh_host=123.45.67.89 ansible_ssh_user=testuser ansible_ssh_port
 
 	for _, tc := range TestCases {
 		var p Provisioner
-		p.Prepare(testConfig(t))
+		err := p.Prepare(testConfig(t))
+		if err == nil {
+			t.Fatalf("should have error")
+		}
 		defer os.Remove(p.config.Command)
 		p.ansibleMajVersion = tc.AnsibleVersion
 		p.config.User = tc.User
@@ -395,7 +397,7 @@ default ansible_ssh_host=123.45.67.89 ansible_ssh_user=testuser ansible_ssh_port
 		p.config.UseProxy = tc.UseProxy
 		p.generatedData = tc.GeneratedData
 
-		err := p.createInventoryFile()
+		err = p.createInventoryFile()
 		if err != nil {
 			t.Fatalf("error creating config using localhost and local port proxy")
 		}
@@ -621,7 +623,10 @@ func TestCreateCmdArgs(t *testing.T) {
 
 	for _, tc := range TestCases {
 		var p Provisioner
-		p.Prepare(testConfig(t))
+		err := p.Prepare(testConfig(t))
+		if err == nil {
+			t.Fatalf("should have error")
+		}
 		defer os.Remove(p.config.Command)
 		p.config.UseProxy = tc.UseProxy
 		p.config.PackerBuilderType = "fakebuilder"
@@ -705,7 +710,10 @@ func TestUseProxy(t *testing.T) {
 
 	for _, tc := range tcs {
 		var p Provisioner
-		p.Prepare(testConfig(t))
+		err := p.Prepare(testConfig(t))
+		if err == nil {
+			t.Fatalf("%s should have error", tc.explanation)
+		}
 		p.config.UseProxy = tc.UseProxy
 		defer os.Remove(p.config.Command)
 		p.ansibleMajVersion = 1
@@ -720,6 +728,7 @@ func TestUseProxy(t *testing.T) {
 			Reader: new(bytes.Buffer),
 			Writer: new(bytes.Buffer),
 		}
+		//nolint:errcheck
 		p.Provision(ctx, ui, comm, tc.generatedData)
 
 		if l.setupAdapterCalled != tc.expectedSetupAdapterCalled {
