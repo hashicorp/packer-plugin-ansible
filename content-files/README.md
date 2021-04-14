@@ -11,7 +11,7 @@ be used with the `packer-sdc renderdocs` command to auto generate full docs for 
 
 
 ### Auto Generating Docs
-Make the necessary updates the content-files; once ready use packer-sdc to generate the update docs
+Make the necessary updates to content-files; once ready use packer-sdc to generate the update docs
 
 ```
 packer-sdc renderdocs -src content-files/docs -partials content-files/partials -dst docs/
