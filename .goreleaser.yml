@@ -78,7 +78,7 @@ release:
   # draft: true
   # As part of the release doc files are included as a separate deliverable for consumption by Packer.io.
   # To include a separate docs.zip uncomment the extra_files config and the docs.zip command hook above.
-  #extra_files:
+  extra_files:
   - glob: ./docs.zip
 
 changelog:
