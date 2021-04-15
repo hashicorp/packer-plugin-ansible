@@ -1,4 +1,4 @@
-module packer-plugin-ansible
+module github.com/hashicorp/packer-plugin-ansible
 
 go 1.16
 
