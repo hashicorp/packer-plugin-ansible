@@ -1,3 +1,4 @@
 main
 dist/*
+docs-rendered/*
 packer-plugin-scaffolding
