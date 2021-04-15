@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	ansible "packer-plugin-ansible/provisioner/ansible"
-	ansibleLocal "packer-plugin-ansible/provisioner/ansible-local"
+	ansible "github.com/hashicorp/packer-plugin-ansible/provisioner/ansible"
+	ansibleLocal "github.com/hashicorp/packer-plugin-ansible/provisioner/ansible-local"
 
 	"github.com/hashicorp/packer-plugin-sdk/plugin"
 	"github.com/hashicorp/packer-plugin-sdk/version"
