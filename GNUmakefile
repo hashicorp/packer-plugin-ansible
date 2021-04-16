@@ -14,11 +14,11 @@ dev: build
 	@mv ${BINARY} ~/.packer.d/plugins/${BINARY}
 
 generate:
-	@go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@6e363ff6a45e30abc1c20296252b892ff7f3fc68
+	@go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@latest
 	@go generate ./...
 
 ci-release-docs:
-	@go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@6e363ff6a45e30abc1c20296252b892ff7f3fc68
+	@go install github.com/hashicorp/packer-plugin-sdk/cmd/packer-sdc@latest
 	@packer-sdc renderdocs -src docs -partials docs-partials/ -dst docs/
 	@/bin/sh -c "[ -d docs ] && zip -r docs.zip docs/"
 
