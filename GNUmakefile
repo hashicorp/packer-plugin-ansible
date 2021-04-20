@@ -22,9 +22,6 @@ ci-release-docs:
 	@packer-sdc renderdocs -src docs -partials docs-partials/ -dst docs/
 	@/bin/sh -c "[ -d docs ] && zip -r docs.zip docs/"
 
-run-example: dev
-	@packer build ./example
-
 test:
 	@go test -count $(COUNT) $(TEST) -timeout=3m
 
