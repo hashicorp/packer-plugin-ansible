@@ -227,28 +227,6 @@ Optional:
   127.0.0.1
   ```
 
-- `galaxy_file` (string) - A requirements file which provides a way to
-   install roles or collections with the [ansible-galaxy
-   cli](https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#the-ansible-galaxy-command-line-tool)
-   on the local machine before executing `ansible-playbook`. By default, this is empty.
-
-- `galaxy_command` (string) - The command to invoke ansible-galaxy. By default, this is
-  `ansible-galaxy`.
-
-- `galaxy_force_install` (bool) - Force overwriting an existing role.
-   Adds `--force` option to `ansible-galaxy` command. By default, this is
-   `false`.
-
-- `galaxy_roles_path` (string) - The path to the directory on the remote system in which to
-    install the roles. Adds `--roles-path /path/to/your/roles` to
-    `ansible-galaxy` command. By default, this will install to a 'galaxy_roles' subfolder in the
-    staging/roles directory.
-
-- `galaxy_collections_path` (string) - The path to the directory on the remote system in which to
-    install the collections. Adds `--collections-path /path/to/your/collections` to
-    `ansible-galaxy` command. By default, this will install to a 'galaxy_collections' subfolder in the
-    staging/collections directory.
-
 <!-- End of code generated from the comments of the Config struct in provisioner/ansible-local/provisioner.go; -->
 
 
@@ -320,6 +298,37 @@ Parameters common to all provisioners:
 
 - `timeout` (duration) - If the provisioner takes more than for example
   `1h10m1s` or `10m` to finish, the provisioner will timeout and fail.
+
+
+<!-- Code generated from the comments of the GalaxyConfig struct in provisioner/common/common.go; DO NOT EDIT MANUALLY -->
+
+- `galaxy_file` (string) - A requirements file which provides a way to
+   install roles or collections with the [ansible-galaxy
+   cli](https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#the-ansible-galaxy-command-line-tool)
+   on the local machine before executing `ansible-playbook`. By default, this is empty.
+
+- `galaxy_command` (string) - The command to invoke ansible-galaxy. By default, this is
+  `ansible-galaxy`.
+
+- `galaxy_force_install` (bool) - Force overwriting an existing role.
+   Adds `--force` option to `ansible-galaxy` command. By default, this is
+   `false`.
+
+- `galaxy_roles_path` (string) - The path to the directory on your local system in which to
+    install the roles. Adds `--roles-path /path/to/your/roles` to
+    `ansible-galaxy` command. By default, this is empty, and thus `--roles-path`
+    option is not added to the command.
+
+- `galaxy_collections_path` (string) - The path to the directory on your local system in which to
+    install the collections. Adds `--collections-path /path/to/your/collections` to
+    `ansible-galaxy` command. By default, this is empty, and thus `--collections-path`
+    option is not added to the command.
+
+- `galaxy_force_with_deps` (bool) - Force overwriting an existing role and its dependencies.
+   Adds `--force-with-deps` option to `ansible-galaxy` command. By default,
+   this is `false`.
+
+<!-- End of code generated from the comments of the GalaxyConfig struct in provisioner/common/common.go; -->
 
 
 ## Default Extra Variables
