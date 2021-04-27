@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/hcl/v2/hcldec"
+	ansiblecommon "github.com/hashicorp/packer-plugin-ansible/provisioner/common"
 	"github.com/hashicorp/packer-plugin-sdk/common"
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 	"github.com/hashicorp/packer-plugin-sdk/template/config"
@@ -24,8 +25,10 @@ import (
 const DefaultStagingDir = "/tmp/packer-provisioner-ansible-local"
 
 type Config struct {
-	common.PackerConfig `mapstructure:",squash"`
-	ctx                 interpolate.Context
+	common.PackerConfig        `mapstructure:",squash"`
+	ansiblecommon.GalaxyConfig `mapstructure:",squash"`
+
+	ctx interpolate.Context
 	// The command to invoke ansible. Defaults to
 	//  `ansible-playbook`. If you would like to provide a more complex command,
 	//  for example, something that sets up a virtual environment before calling
@@ -88,7 +91,6 @@ type Config struct {
 
 	// An array of local paths of collections to upload.
 	CollectionPaths []string `mapstructure:"collection_paths"`
-
 	// The directory where files will be uploaded. Packer requires write
 	// permissions in this directory.
 	StagingDir string `mapstructure:"staging_directory"`
@@ -136,20 +138,6 @@ type Config struct {
 	// 127.0.0.1
 	// ```
 	InventoryGroups []string `mapstructure:"inventory_groups"`
-	// A requirements file which provides a way to
-	//  install roles or collections with the [ansible-galaxy
-	//  cli](https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#the-ansible-galaxy-command-line-tool)
-	//  on the local machine before executing `ansible-playbook`. By default, this is empty.
-	GalaxyFile string `mapstructure:"galaxy_file"`
-	// The command to invoke ansible-galaxy. By default, this is
-	// `ansible-galaxy`.
-	GalaxyCommand string `mapstructure:"galaxy_command"`
-
-	// Force overwriting an existing role.
-	//  Adds `--force` option to `ansible-galaxy` command. By default, this is
-	//  `false`.
-	GalaxyForceInstall bool `mapstructure:"galaxy_force_install"`
-
 	// The path to the directory on the remote system in which to
 	//   install the roles. Adds `--roles-path /path/to/your/roles` to
 	//   `ansible-galaxy` command. By default, this will install to a 'galaxy_roles' subfolder in the
@@ -470,47 +458,6 @@ func (p *Provisioner) provisionPlaybookFile(ui packersdk.Ui, comm packersdk.Comm
 	return nil
 }
 
-func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator) error {
-	galaxyFile := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(p.config.GalaxyFile)))
-
-	// ansible-galaxy install -r requirements.yml
-	roleArgs := []string{"install", "-r", galaxyFile, "-p", filepath.ToSlash(p.config.GalaxyRolesPath)}
-
-	// Instead of modifying args depending on config values and removing or modifying values from
-	// the slice between role and collection installs, just use 2 slices and simplify everything
-	collectionArgs := []string{"collection", "install", "-r", galaxyFile, "-p", filepath.ToSlash(p.config.GalaxyCollectionsPath)}
-
-	// Add force to arguments
-	if p.config.GalaxyForceInstall {
-		roleArgs = append(roleArgs, "-f")
-		collectionArgs = append(collectionArgs, "-f")
-	}
-
-	// Search galaxy_file for roles and collections keywords
-	f, err := ioutil.ReadFile(p.config.GalaxyFile)
-	if err != nil {
-		return err
-	}
-	hasRoles, _ := regexp.Match(`(?m)^roles:`, f)
-	hasCollections, _ := regexp.Match(`(?m)^collections:`, f)
-
-	// If if roles keyword present (v2 format), or no collections keyword present (v1), install roles
-	if hasRoles || !hasCollections {
-		if roleInstallError := p.invokeGalaxyCommand(roleArgs, ui, comm); roleInstallError != nil {
-			return roleInstallError
-		}
-	}
-
-	// If collections keyword present (v2 format), install collections
-	if hasCollections {
-		if collectionInstallError := p.invokeGalaxyCommand(collectionArgs, ui, comm); collectionInstallError != nil {
-			return collectionInstallError
-		}
-	}
-
-	return nil
-}
-
 // Intended to be invoked from p.executeGalaxy depending on the Ansible Galaxy parameters passed to Packer
 func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm packersdk.Communicator) error {
 	ctx := context.TODO()
@@ -542,7 +489,19 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 
 	// Fetch external dependencies
 	if len(p.config.GalaxyFile) > 0 {
-		if err := p.executeGalaxy(ui, comm); err != nil {
+		executeConfig := ansiblecommon.GalaxyExectureArgsConfig{
+			Filepath:        filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(p.config.GalaxyFile))),
+			RolesPath:       filepath.ToSlash(p.config.GalaxyRolesPath),
+			CollectionsPath: filepath.ToSlash(p.config.GalaxyCollectionsPath),
+			ForceInstall:    p.config.GalaxyForceInstall,
+		}
+
+		args, err := ansiblecommon.BuildGalaxyArgs(executeConfig)
+		if err != nil {
+			return fmt.Errorf("Error building Ansible Galaxy: %s", err)
+		}
+
+		if err := p.invokeGalaxyCommand(args, ui, comm); err != nil {
 			return fmt.Errorf("Error executing Ansible Galaxy: %s", err)
 		}
 	}
