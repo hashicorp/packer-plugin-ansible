@@ -1,0 +1,9 @@
+---
+- name: hello world
+  hosts: 127.0.0.1
+  connection: local
+
+  tasks:
+    - command: echo {{ pizza_toppings }}
+    - debug: msg="{{ pizza_toppings }}"
+

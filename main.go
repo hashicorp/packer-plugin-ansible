@@ -28,7 +28,7 @@ var (
 func main() {
 	pps := plugin.NewSet()
 	pps.RegisterProvisioner(plugin.DEFAULT_NAME, new(ansible.Provisioner))
-	pps.RegisterProvisioner("ansible-local", new(ansibleLocal.Provisioner))
+	pps.RegisterProvisioner("local", new(ansibleLocal.Provisioner))
 	pps.SetVersion(PluginVersion)
 	err := pps.Run()
 
