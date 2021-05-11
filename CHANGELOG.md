@@ -1,3 +1,8 @@
+## 0.0.3 (May 11, 2021)
+
+### BUG FIXES:
+* Fix registration bug that externally caused plugin not to load properly [GH-44]
+
 ## 0.0.2 (April 15, 2021)
 
 ### BUG FIXES:
