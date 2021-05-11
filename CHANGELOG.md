@@ -1,5 +1,3 @@
-## 0.0.4 (Unreleased)
-
 ## 0.0.3 (May 11, 2021)
 
 ### BUG FIXES:
