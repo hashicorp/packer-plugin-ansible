@@ -9,3 +9,6 @@ require (
 	github.com/zclconf/go-cty v1.8.3
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )
+
+// Incorrect plugin registration for ansible-local; see packer-plugin-ansible/pull/44
+retract [v0.0.1, v0.0.2]
