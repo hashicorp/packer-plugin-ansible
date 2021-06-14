@@ -1,4 +1,16 @@
+packer {
+  required_plugins {
+    docker = {
+      source  = "github.com/hashicorp/docker"
+      version = ">=0.0.7"
+    }
+    ansible = {
+      source  = "github.com/hashicorp/ansible"
+      version = ">=1.0.0"
+    }
+  }
 
+}
 source "docker" "debian" {
   discard = true
   image   = "debian:jessie"
