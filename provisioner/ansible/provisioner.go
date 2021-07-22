@@ -55,8 +55,9 @@ type Config struct {
 	// not be quoted. Usage example:
 	//
 	// ```json
-	//   "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
+	//    "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
 	// ```
+	//
 	// In certain scenarios where you want to pass ansible command line arguments
 	// that include parameter and value (for example `--vault-password-file pwfile`),
 	// from ansible documentation this is correct format but that is NOT accepted here.
@@ -65,12 +66,23 @@ type Config struct {
 	// If you are running a Windows build on AWS, Azure, Google Compute, or OpenStack
 	// and would like to access the auto-generated password that Packer uses to
 	// connect to a Windows instance via WinRM, you can use the template variable
-	// `{{.WinRMPassword}}` in this option. For example:
+	//
+	// ```build.Password``` in HCL templates or ```{{ build `Password`}}``` in
+	// legacy JSON templates. For example:
+	//
+	// in JSON templates:
 	//
 	// ```json
-	//   "extra_arguments": [
-	//     "--extra-vars", "winrm_password={{ .WinRMPassword }}"
-	//   ]
+	// "extra_arguments": [
+	//    "--extra-vars", "winrm_password={{ build `Password`}}"
+	// ]
+	// ```
+	//
+	// in HCL templates:
+	// ```hcl
+	// extra_arguments = [
+	//    "--extra-vars", "winrm_password=${build.Password}"
+	// ]
 	// ```
 	ExtraArguments []string `mapstructure:"extra_arguments"`
 	// Environment variables to set before
