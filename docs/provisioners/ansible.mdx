@@ -517,8 +517,8 @@ to successfully run your Ansible playbook as root; `become: yes` will fail.
 
 Sometimes, you may have extra setup that needs to be called as part of your
 ansible run. The easiest way to do this is by writing a small bash script and
-using that bash script in your "command" in place of the default
-"ansible-playbook". For example, you may need to launch a Python virtualenv
+using that bash script in your `command` in place of the default
+`ansible-playbook`. For example, you may need to launch a Python `virtualenv`
 before calling Ansible. To do this, you'd want to create a bash script like
 
 ```shell
