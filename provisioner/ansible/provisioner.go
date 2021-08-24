@@ -855,15 +855,24 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 	// remove winrm password from command, if it's been added
 	flattenedCmd := strings.Join(cmd.Args, " ")
 	sanitized := flattenedCmd
-	winRMPass, ok := p.generatedData["WinRMPassword"]
-	if ok && winRMPass != "" {
-		sanitized = strings.Replace(sanitized,
-			winRMPass.(string), "*****", -1)
+
+	for _, arg := range p.config.ExtraArguments {
+		args := strings.SplitN(arg, "=", 2)
+		if len(args) != 2 {
+			continue
+		}
+		if strings.Contains(strings.ToLower(args[0]), "password") ||
+			strings.Contains(strings.ToLower(args[0]), "secret") {
+			sanitized = strings.Replace(sanitized,
+				args[1], "*****", -1)
+		}
 	}
-	if checkArg("ansible_password", args) {
-		usePass, ok := p.generatedData["Password"]
-		if ok && usePass != "" {
-			sanitized = strings.Replace(sanitized, usePass.(string), "*****", -1)
+
+	for _, key := range []string{"WinRMPassword", "Password"} {
+		secret, ok := p.generatedData[key]
+		if ok && secret != "" {
+			sanitized = strings.Replace(sanitized,
+				secret.(string), "*****", -1)
 		}
 	}
 	ui.Say(fmt.Sprintf("Executing Ansible: %s", sanitized))
