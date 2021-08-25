@@ -8,40 +8,40 @@
    Arbitrary bash scripting will not work and needs to go inside an
    executable script.
 
-- `extra_arguments` ([]string) - Extra arguments to pass to Ansible.
-  These arguments _will not_ be passed through a shell and arguments should
-  not be quoted. Usage example:
+- `extra_arguments` ([]string) - Extra arguments to pass to Ansible. These arguments _will not_ be passed
+  through a shell and arguments should not be quoted. Usage example:
   
   ```json
      "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
   ```
   
-  In certain scenarios where you want to pass ansible command line arguments
-  that include parameter and value (for example `--vault-password-file pwfile`),
-  from ansible documentation this is correct format but that is NOT accepted here.
-  Instead you need to do it like `--vault-password-file=pwfile`.
+  In certain scenarios where you want to pass ansible command line
+  arguments that include parameter and value (for example
+  `--vault-password-file pwfile`), from ansible documentation this is
+  correct format but that is NOT accepted here. Instead you need to do it
+  like `--vault-password-file=pwfile`.
   
-  If you are running a Windows build on AWS, Azure, Google Compute, or OpenStack
-  and would like to access the auto-generated password that Packer uses to
-  connect to a Windows instance via WinRM, you can use the template variable
+  If you are running a Windows build on AWS, Azure, Google Compute, or
+  OpenStack and would like to access the auto-generated password that
+  Packer uses to connect to a Windows instance via WinRM, you can use the
+  template variable
   
   ```build.Password``` in HCL templates or ```{{ build `Password`}}``` in
   legacy JSON templates. For example:
   
   in JSON templates:
   
-  ```json
-  "extra_arguments": [
+  ```json "extra_arguments": [
      "--extra-vars", "winrm_password={{ build `Password`}}"
-  ]
-  ```
+  ] ```
   
-  in HCL templates:
-  ```hcl
-  extra_arguments = [
+  in HCL templates: ```hcl extra_arguments = [
      "--extra-vars", "winrm_password=${build.Password}"
-  ]
-  ```
+  ] ```
+  
+  If the lefthand side of a value contains 'secret' or 'password' (case
+  insensitive) it will be hidden from output. For example, passing
+  "my_password=secr3t" will hide "secr3t" from output.
 
 - `ansible_env_vars` ([]string) - Environment variables to set before
     running Ansible. Usage example:
