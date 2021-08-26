@@ -50,40 +50,40 @@ type Config struct {
 	//  Arbitrary bash scripting will not work and needs to go inside an
 	//  executable script.
 	Command string `mapstructure:"command"`
-	// Extra arguments to pass to Ansible.
-	// These arguments _will not_ be passed through a shell and arguments should
-	// not be quoted. Usage example:
+	// Extra arguments to pass to Ansible. These arguments _will not_ be passed
+	// through a shell and arguments should not be quoted. Usage example:
 	//
 	// ```json
 	//    "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
 	// ```
 	//
-	// In certain scenarios where you want to pass ansible command line arguments
-	// that include parameter and value (for example `--vault-password-file pwfile`),
-	// from ansible documentation this is correct format but that is NOT accepted here.
-	// Instead you need to do it like `--vault-password-file=pwfile`.
+	// In certain scenarios where you want to pass ansible command line
+	// arguments that include parameter and value (for example
+	// `--vault-password-file pwfile`), from ansible documentation this is
+	// correct format but that is NOT accepted here. Instead you need to do it
+	// like `--vault-password-file=pwfile`.
 	//
-	// If you are running a Windows build on AWS, Azure, Google Compute, or OpenStack
-	// and would like to access the auto-generated password that Packer uses to
-	// connect to a Windows instance via WinRM, you can use the template variable
+	// If you are running a Windows build on AWS, Azure, Google Compute, or
+	// OpenStack and would like to access the auto-generated password that
+	// Packer uses to connect to a Windows instance via WinRM, you can use the
+	// template variable
 	//
 	// ```build.Password``` in HCL templates or ```{{ build `Password`}}``` in
 	// legacy JSON templates. For example:
 	//
 	// in JSON templates:
 	//
-	// ```json
-	// "extra_arguments": [
+	// ```json "extra_arguments": [
 	//    "--extra-vars", "winrm_password={{ build `Password`}}"
-	// ]
-	// ```
+	// ] ```
 	//
-	// in HCL templates:
-	// ```hcl
-	// extra_arguments = [
+	// in HCL templates: ```hcl extra_arguments = [
 	//    "--extra-vars", "winrm_password=${build.Password}"
-	// ]
-	// ```
+	// ] ```
+	//
+	// If the lefthand side of a value contains 'secret' or 'password' (case
+	// insensitive) it will be hidden from output. For example, passing
+	// "my_password=secr3t" will hide "secr3t" from output.
 	ExtraArguments []string `mapstructure:"extra_arguments"`
 	// Environment variables to set before
 	//   running Ansible. Usage example:
@@ -855,15 +855,24 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 	// remove winrm password from command, if it's been added
 	flattenedCmd := strings.Join(cmd.Args, " ")
 	sanitized := flattenedCmd
-	winRMPass, ok := p.generatedData["WinRMPassword"]
-	if ok && winRMPass != "" {
-		sanitized = strings.Replace(sanitized,
-			winRMPass.(string), "*****", -1)
+
+	for _, arg := range p.config.ExtraArguments {
+		args := strings.SplitN(arg, "=", 2)
+		if len(args) != 2 {
+			continue
+		}
+		if strings.Contains(strings.ToLower(args[0]), "password") ||
+			strings.Contains(strings.ToLower(args[0]), "secret") {
+			sanitized = strings.Replace(sanitized,
+				args[1], "*****", -1)
+		}
 	}
-	if checkArg("ansible_password", args) {
-		usePass, ok := p.generatedData["Password"]
-		if ok && usePass != "" {
-			sanitized = strings.Replace(sanitized, usePass.(string), "*****", -1)
+
+	for _, key := range []string{"WinRMPassword", "Password"} {
+		secret, ok := p.generatedData[key]
+		if ok && secret != "" {
+			sanitized = strings.Replace(sanitized,
+				secret.(string), "*****", -1)
 		}
 	}
 	ui.Say(fmt.Sprintf("Executing Ansible: %s", sanitized))
