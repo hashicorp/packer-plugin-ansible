@@ -190,6 +190,10 @@ type Config struct {
 	//  Adds `--force` option to `ansible-galaxy` command. By default, this is
 	//  `false`.
 	GalaxyForceInstall bool `mapstructure:"galaxy_force_install"`
+	// Force overwriting an existing role and its dependencies.
+	//  Adds `--force-with-deps` option to `ansible-galaxy` command. By default,
+	//  this is `false`.
+	GalaxyForceWithDeps bool `mapstructure:"galaxy_force_with_deps"`
 	// The path to the directory on your local system in which to
 	//   install the roles. Adds `--roles-path /path/to/your/roles` to
 	//   `ansible-galaxy` command. By default, this is empty, and thus `--roles-path`
@@ -657,6 +661,11 @@ func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator
 	if p.config.GalaxyForceInstall {
 		roleArgs = append(roleArgs, "-f")
 		collectionArgs = append(collectionArgs, "-f")
+	}
+	// Add --force-with-deps to arguments
+	if p.config.GalaxyForceWithDeps {
+	        roleArgs = append(roleArgs, "--force-with-deps")
+	        collectionArgs = append(collectionArgs, "--force-with-deps")
 	}
 
 	// Add roles_path argument if specified
