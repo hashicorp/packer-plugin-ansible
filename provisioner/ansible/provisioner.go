@@ -664,8 +664,8 @@ func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator
 	}
 	// Add --force-with-deps to arguments
 	if p.config.GalaxyForceWithDeps {
-	        roleArgs = append(roleArgs, "--force-with-deps")
-	        collectionArgs = append(collectionArgs, "--force-with-deps")
+		roleArgs = append(roleArgs, "--force-with-deps")
+		collectionArgs = append(collectionArgs, "--force-with-deps")
 	}
 
 	// Add roles_path argument if specified
