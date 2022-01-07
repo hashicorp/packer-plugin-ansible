@@ -10,54 +10,60 @@
 
 - `extra_arguments` ([]string) - Extra arguments to pass to Ansible. These arguments _will not_ be passed
   through a shell and arguments should not be quoted. Usage example:
-  
+
   ```json
      "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
   ```
-  
+
   In certain scenarios where you want to pass ansible command line
   arguments that include parameter and value (for example
   `--vault-password-file pwfile`), from ansible documentation this is
   correct format but that is NOT accepted here. Instead you need to do it
   like `--vault-password-file=pwfile`.
-  
+
   If you are running a Windows build on AWS, Azure, Google Compute, or
   OpenStack and would like to access the auto-generated password that
   Packer uses to connect to a Windows instance via WinRM, you can use the
   template variable
-  
+
   ```build.Password``` in HCL templates or ```{{ build `Password`}}``` in
   legacy JSON templates. For example:
-  
+
   in JSON templates:
-  
-  ```json "extra_arguments": [
+
+  ```json
+  "extra_arguments": [
      "--extra-vars", "winrm_password={{ build `Password`}}"
-  ] ```
-  
-  in HCL templates: ```hcl extra_arguments = [
+  ]
+  ```
+
+  in HCL templates:
+
+  ```hcl
+  extra_arguments = [
      "--extra-vars", "winrm_password=${build.Password}"
-  ] ```
-  
+  ]
+  ```
+
   If the lefthand side of a value contains 'secret' or 'password' (case
   insensitive) it will be hidden from output. For example, passing
   "my_password=secr3t" will hide "secr3t" from output.
 
 - `ansible_env_vars` ([]string) - Environment variables to set before
     running Ansible. Usage example:
-  
+
     ```json
       "ansible_env_vars": [ "ANSIBLE_HOST_KEY_CHECKING=False", "ANSIBLE_SSH_ARGS='-o ForwardAgent=yes -o ControlMaster=auto -o ControlPersist=60s'", "ANSIBLE_NOCOLOR=True" ]
     ```
-  
+
     This is a [template engine](/docs/templates/legacy_json_templates/engine). Therefore, you
     may use user variables and template functions in this field.
-  
+
     For example, if you are running a Windows build on AWS, Azure,
     Google Compute, or OpenStack and would like to access the auto-generated
     password that Packer uses to connect to a Windows instance via WinRM, you
     can use the template variable `{{.WinRMPassword}}` in this option. Example:
-  
+
     ```json
     "ansible_env_vars": [ "WINRM_PASSWORD={{.WinRMPassword}}" ],
     ```
@@ -167,7 +173,7 @@
   to use the Ansible provisioner. If you set this option to `false`, but
   Packer cannot find an IP address to connect Ansible to, it will
   automatically set up the adapter anyway.
-  
+
    In order for Ansible to connect properly even when use_proxy is false, you
   need to make sure that you are either providing a valid username and ssh key
   to the ansible provisioner directly, or that the username and ssh key
@@ -175,7 +181,7 @@
   provide a user to ansible, it will use the user associated with your
   builder, not the user running Packer.
    use_proxy=false is currently only supported for SSH and WinRM.
-  
+
   Currently, this defaults to `true` for all connection types. In the future,
   this option will be changed to default to `false` for SSH and WinRM
   connections where the provisioner has access to a host IP.
