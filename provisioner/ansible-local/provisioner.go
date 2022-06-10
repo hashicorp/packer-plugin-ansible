@@ -6,8 +6,10 @@ package ansiblelocal
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2/hcldec"
@@ -95,15 +97,12 @@ type Config struct {
 	// uploaded to the remote machine under `staging_directory`/roles. By default,
 	// this is empty.
 	RolePaths []string `mapstructure:"role_paths"`
-	// The directory where all the configuration of Ansible by Packer will be placed.
-	// By default this is `/tmp/packer-provisioner-ansible-local/<uuid>`, where
-	// `<uuid>` is replaced with a unique ID so that this provisioner can be run more
-	// than once. If you'd like to know the location of the staging directory in
-	// advance, you should set this to a known location. This directory doesn't need
-	// to exist but must have proper permissions so that the SSH user that Packer uses
-	// is able to create directories and write into this folder. If the permissions
-	// are not correct, use a shell provisioner prior to this to configure it
-	// properly.
+
+	// An array of local paths of collections to upload.
+	CollectionPaths []string `mapstructure:"collection_paths"`
+
+	// The directory where files will be uploaded. Packer requires write
+	// permissions in this directory.
 	StagingDir string `mapstructure:"staging_directory"`
 	// If set to `true`, the content of the `staging_directory` will be removed after
 	// executing ansible. By default this is set to `false`.
@@ -157,6 +156,23 @@ type Config struct {
 	// The command to invoke ansible-galaxy. By default, this is
 	// `ansible-galaxy`.
 	GalaxyCommand string `mapstructure:"galaxy_command"`
+
+	// Force overwriting an existing role.
+	//  Adds `--force` option to `ansible-galaxy` command. By default, this is
+	//  `false`.
+	GalaxyForceInstall bool `mapstructure:"galaxy_force_install"`
+
+	// The path to the directory on the remote system in which to
+	//   install the roles. Adds `--roles-path /path/to/your/roles` to
+	//   `ansible-galaxy` command. By default, this will install to a 'galaxy_roles' subfolder in the
+	//   staging/roles directory.
+	GalaxyRolesPath string `mapstructure:"galaxy_roles_path"`
+
+	// The path to the directory on the remote system in which to
+	//   install the collections. Adds `--collections-path /path/to/your/collections` to
+	//   `ansible-galaxy` command. By default, this will install to a 'galaxy_collections' subfolder in the
+	//   staging/collections directory.
+	GalaxyCollectionsPath string `mapstructure:"galaxy_collections_path"`
 }
 
 type Provisioner struct {
@@ -194,6 +210,14 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 
 	if p.config.StagingDir == "" {
 		p.config.StagingDir = filepath.ToSlash(filepath.Join(DefaultStagingDir, uuid.TimeOrderedUUID()))
+	}
+
+	if p.config.GalaxyRolesPath == "" {
+		p.config.GalaxyRolesPath = filepath.ToSlash(filepath.Join(p.config.StagingDir, "galaxy_roles"))
+	}
+
+	if p.config.GalaxyCollectionsPath == "" {
+		p.config.GalaxyCollectionsPath = filepath.ToSlash(filepath.Join(p.config.StagingDir, "galaxy_collections"))
 	}
 
 	// Validation
@@ -271,6 +295,11 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 	}
 	for _, path := range p.config.RolePaths {
 		if err := validateDirConfig(path, "role_paths"); err != nil {
+			errs = packersdk.MultiErrorAppend(errs, err)
+		}
+	}
+	for _, path := range p.config.CollectionPaths {
+		if err := validateDirConfig(path, "collection_paths"); err != nil {
 			errs = packersdk.MultiErrorAppend(errs, err)
 		}
 	}
@@ -378,6 +407,16 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 		}
 	}
 
+	if len(p.config.CollectionPaths) > 0 {
+		ui.Message("Uploading collection directories...")
+		for _, src := range p.config.CollectionPaths {
+			dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, "collections", filepath.Base(src)))
+			if err := p.uploadDir(ui, comm, dst, src); err != nil {
+				return fmt.Errorf("Error uploading collections: %s", err)
+			}
+		}
+	}
+
 	if len(p.config.PlaybookPaths) > 0 {
 		ui.Message("Uploading additional Playbooks...")
 		playbookDir := filepath.ToSlash(filepath.Join(p.config.StagingDir, "playbooks"))
@@ -444,14 +483,53 @@ func (p *Provisioner) provisionPlaybookFile(ui packersdk.Ui, comm packersdk.Comm
 }
 
 func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator) error {
-	ctx := context.TODO()
-	rolesDir := filepath.ToSlash(filepath.Join(p.config.StagingDir, "roles"))
 	galaxyFile := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(p.config.GalaxyFile)))
 
-	// ansible-galaxy install -r requirements.yml -p roles/
-	command := fmt.Sprintf("cd %s && %s install -r %s -p %s",
-		p.config.StagingDir, p.config.GalaxyCommand, galaxyFile, rolesDir)
+	// ansible-galaxy install -r requirements.yml
+	roleArgs := []string{"install", "-r", galaxyFile, "-p", filepath.ToSlash(p.config.GalaxyRolesPath)}
+
+	// Instead of modifying args depending on config values and removing or modifying values from
+	// the slice between role and collection installs, just use 2 slices and simplify everything
+	collectionArgs := []string{"collection", "install", "-r", galaxyFile, "-p", filepath.ToSlash(p.config.GalaxyCollectionsPath)}
+
+	// Add force to arguments
+	if p.config.GalaxyForceInstall {
+		roleArgs = append(roleArgs, "-f")
+		collectionArgs = append(collectionArgs, "-f")
+	}
+
+	// Search galaxy_file for roles and collections keywords
+	f, err := ioutil.ReadFile(p.config.GalaxyFile)
+	if err != nil {
+		return err
+	}
+	hasRoles, _ := regexp.Match(`(?m)^roles:`, f)
+	hasCollections, _ := regexp.Match(`(?m)^collections:`, f)
+
+	// If if roles keyword present (v2 format), or no collections keyword present (v1), install roles
+	if hasRoles || !hasCollections {
+		if roleInstallError := p.invokeGalaxyCommand(roleArgs, ui, comm); roleInstallError != nil {
+			return roleInstallError
+		}
+	}
+
+	// If collections keyword present (v2 format), install collections
+	if hasCollections {
+		if collectionInstallError := p.invokeGalaxyCommand(collectionArgs, ui, comm); collectionInstallError != nil {
+			return collectionInstallError
+		}
+	}
+
+	return nil
+}
+
+// Intended to be invoked from p.executeGalaxy depending on the Ansible Galaxy parameters passed to Packer
+func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm packersdk.Communicator) error {
+	ctx := context.TODO()
+	command := fmt.Sprintf("cd %s && %s %s",
+		p.config.StagingDir, p.config.GalaxyCommand, strings.Join(args, " "))
 	ui.Message(fmt.Sprintf("Executing Ansible Galaxy: %s", command))
+
 	cmd := &packersdk.RemoteCmd{
 		Command: command,
 	}
@@ -501,8 +579,43 @@ func (p *Provisioner) executeAnsiblePlaybook(
 	ui packersdk.Ui, comm packersdk.Communicator, playbookFile, extraArgs, inventory string,
 ) error {
 	ctx := context.TODO()
-	command := fmt.Sprintf("cd %s && %s %s%s -c local -i %s",
-		p.config.StagingDir, p.config.Command, playbookFile, extraArgs, inventory,
+	env_vars := ""
+	galaxyFileHasCollections := false
+	galaxyFileHasRoles := false
+
+	// Check if we have custom collections from either galaxy or locally. TODO: Abstract to function
+	// as we use the same check in executeGalaxy
+	if len(p.config.GalaxyFile) > 0 {
+		f, err := ioutil.ReadFile(p.config.GalaxyFile)
+		if err != nil {
+			return err
+		}
+		galaxyFileHasCollections, _ = regexp.Match(`(?m)^collections:`, f)
+		galaxyFileHasRoles, _ = regexp.Match(`(?m)^roles:`, f)
+	}
+
+	collections_path := []string{}
+
+	if galaxyFileHasCollections {
+		collections_path = append(collections_path, p.config.GalaxyCollectionsPath)
+	}
+
+	if len(p.config.CollectionPaths) > 0 {
+		collections_path = append(collections_path, filepath.ToSlash(filepath.Join(p.config.StagingDir, "collections")))
+	}
+
+	if len(collections_path) > 0 {
+		env_vars += fmt.Sprintf(" ANSIBLE_COLLECTIONS_PATH=$ANSIBLE_COLLECTIONS_PATH:%s",
+			strings.Join(collections_path, ":"))
+	}
+
+	if galaxyFileHasRoles {
+		env_vars += fmt.Sprintf(" ANSIBLE_ROLES_PATH=$ANSIBLE_ROLES_PATH:%s",
+			p.config.GalaxyRolesPath)
+	}
+
+	command := fmt.Sprintf("cd %s && %s %s %s%s -c local -i %s",
+		p.config.StagingDir, env_vars, p.config.Command, playbookFile, extraArgs, inventory,
 	)
 	ui.Message(fmt.Sprintf("Executing Ansible: %s", command))
 	cmd := &packersdk.RemoteCmd{
