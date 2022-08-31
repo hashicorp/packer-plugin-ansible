@@ -21,7 +21,7 @@ import (
 )
 
 // Be sure to remove the Ansible stub file in each test with:
-//   defer os.Remove(config["command"].(string))
+// defer os.Remove(config["command"].(string))
 func testConfig(t *testing.T) map[string]interface{} {
 	m := make(map[string]interface{})
 	wd, err := os.Getwd()
@@ -154,7 +154,7 @@ func TestProvisionerPrepare_HostKeyFile(t *testing.T) {
 		t.Fatal("could not create random file name")
 	}
 
-	config["ssh_host_key_file"] = fmt.Sprintf("%x", filename)
+	config["ssh_host_key_file"] = string(filename)
 	config["ssh_authorized_key_file"] = publickey_file.Name()
 	config["playbook_file"] = playbook_file.Name()
 
@@ -412,7 +412,7 @@ default ansible_ssh_host=123.45.67.89 ansible_ssh_user=testuser ansible_ssh_port
 		}
 
 		expected := tc.Expected
-		if fmt.Sprintf("%s", f) != expected {
+		if string(f) != expected {
 			t.Fatalf("File didn't match expected:\n\n expected: \n%s\n; recieved: \n%s\n", expected, f)
 		}
 	}
