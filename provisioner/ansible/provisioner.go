@@ -414,13 +414,12 @@ func (p *Provisioner) setupAdapter(ui packersdk.Ui, comm packersdk.Communicator)
 			log.Printf("authentication attempt from %s to %s as %s using %s", conn.RemoteAddr(), conn.LocalAddr(), conn.User(), method)
 		},
 		PublicKeyCallback: keyChecker.Authenticate,
-		//NoClientAuth:      true,
+		// NoClientAuth:      true,
 	}
 
 	config.AddHostKey(hostSigner)
 
 	localListener, err := func() (net.Listener, error) {
-
 		port := p.config.LocalPort
 		tries := 1
 		if port != 0 {
@@ -447,7 +446,6 @@ func (p *Provisioner) setupAdapter(ui packersdk.Ui, comm packersdk.Communicator)
 		}
 		return nil, errors.New("Error setting up SSH proxy connection")
 	}()
-
 	if err != nil {
 		return "", err
 	}
@@ -461,9 +459,11 @@ func (p *Provisioner) setupAdapter(ui packersdk.Ui, comm packersdk.Communicator)
 	return k.privKeyFile, nil
 }
 
-const DefaultSSHInventoryFilev2 = "{{ .HostAlias }} ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
-const DefaultSSHInventoryFilev1 = "{{ .HostAlias }} ansible_ssh_host={{ .Host }} ansible_ssh_user={{ .User }} ansible_ssh_port={{ .Port }}\n"
-const DefaultWinRMInventoryFilev2 = "{{ .HostAlias}} ansible_host={{ .Host }} ansible_connection=winrm ansible_winrm_transport=basic ansible_shell_type=powershell ansible_user={{ .User}} ansible_port={{ .Port }}\n"
+const (
+	DefaultSSHInventoryFilev2   = "{{ .HostAlias }} ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
+	DefaultSSHInventoryFilev1   = "{{ .HostAlias }} ansible_ssh_host={{ .Host }} ansible_ssh_user={{ .User }} ansible_ssh_port={{ .Port }}\n"
+	DefaultWinRMInventoryFilev2 = "{{ .HostAlias}} ansible_host={{ .Host }} ansible_connection=winrm ansible_winrm_transport=basic ansible_shell_type=powershell ansible_user={{ .User}} ansible_port={{ .Port }}\n"
+)
 
 func (p *Provisioner) createInventoryFile() error {
 	log.Printf("Creating inventory file for Ansible run...")
@@ -753,7 +753,7 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 func (p *Provisioner) createCmdArgs(httpAddr, inventory, playbook, privKeyFile string) (args []string, envVars []string) {
 	args = []string{}
 
-	//Setting up AnsibleEnvVars at begining so additional checks can take them into account
+	// Setting up AnsibleEnvVars at begining so additional checks can take them into account
 	if len(p.config.AnsibleEnvVars) > 0 {
 		envVars = append(envVars, p.config.AnsibleEnvVars...)
 	}
@@ -1012,7 +1012,7 @@ func newSigner(privKeyFile string) (*signer, error) {
 	return signer, nil
 }
 
-//checkArg Evaluates if argname is in args
+// checkArg Evaluates if argname is in args
 func checkArg(argname string, args []string) bool {
 	for _, arg := range args {
 		for _, ansibleArg := range strings.Split(arg, "=") {

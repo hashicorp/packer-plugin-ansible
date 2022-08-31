@@ -2,13 +2,12 @@ package ansiblelocal
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-
-	"fmt"
 
 	packersdk "github.com/hashicorp/packer-plugin-sdk/packer"
 )

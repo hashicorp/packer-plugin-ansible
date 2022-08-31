@@ -17,7 +17,6 @@ func main() {
 	pps.RegisterProvisioner("local", new(ansibleLocal.Provisioner))
 	pps.SetVersion(version.PluginVersion)
 	err := pps.Run()
-
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)

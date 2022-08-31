@@ -30,7 +30,7 @@ func testConfig(t *testing.T) map[string]interface{} {
 	}
 	ansible_stub := path.Join(wd, "packer-ansible-stub.sh")
 
-	err = ioutil.WriteFile(ansible_stub, []byte("#!/usr/bin/env bash\necho ansible 1.6.0"), 0777)
+	err = ioutil.WriteFile(ansible_stub, []byte("#!/usr/bin/env bash\necho ansible 1.6.0"), 0o777)
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
