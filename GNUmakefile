@@ -5,7 +5,7 @@ COUNT?=1
 TEST?=$(shell go list ./...)
 HASHICORP_PACKER_PLUGIN_SDK_VERSION?=$(shell go list -m github.com/hashicorp/packer-plugin-sdk | cut -d " " -f2)
 
-.PHONY: dev
+.PHONY: dev test
 
 build:
 	@go build -o ${BINARY}
