@@ -412,7 +412,7 @@ default ansible_ssh_host=123.45.67.89 ansible_ssh_user=testuser ansible_ssh_port
 		}
 
 		expected := tc.Expected
-		if fmt.Sprintf("%s", f) != expected {
+		if string(f) != expected {
 			t.Fatalf("File didn't match expected:\n\n expected: \n%s\n; recieved: \n%s\n", expected, f)
 		}
 	}
