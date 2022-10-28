@@ -5,7 +5,7 @@ The Ansible plugin allows users to execute as a provisioner during a Packer buil
 **Note:** Ansible will _not_ be installed automatically by this
 provisioner. This provisioner expects that Ansible is already installed on the
 guest/remote machine. It is common practice to use the [shell
-provisioner](/docs/provisioners/shell) before the Ansible provisioner to
+provisioner](/packer/docs/provisioners/shell) before the Ansible provisioner to
 do this.
 
 ## Provisioners:
