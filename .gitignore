@@ -3,3 +3,4 @@ dist/*
 docs-rendered/*
 packer-plugin-ansible
 .docs
+crash.log
