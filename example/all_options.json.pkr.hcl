@@ -1,3 +1,6 @@
+# Copyright (c) HashiCorp, Inc.
+# SPDX-License-Identifier: MPL-2.0
+
 locals { timestamp = regex_replace(timestamp(), "[- TZ:]", "") }
 
 source "googlecompute" "alloptions" {
