@@ -241,7 +241,7 @@ are using WinRM with HTTPS, and you are using a self-signed certificate you
 will also have to set `ansible_winrm_server_cert_validation=ignore` in your
 extra_arguments.
 
-Below is a fully functioning Ansible example using WinRM:
+Below is a fully functioning Ansible example for amazon-ebs using WinRM:
 
 <Tabs>
 <Tab heading="HCL2">
@@ -307,6 +307,78 @@ build {
       ]
     }
 }
+```
+
+</Tab>
+
+Below is a fully functioning Ansible example for azure-arm using WinRM.
+Note: pywinrm needs to be installed into the python environment on your local build machine if it's not already installed.
+Note: The ConfigureRemotingForAnsible.ps1 script can be found here https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1.
+
+<Tabs>
+<Tab heading="HCL2">
+
+```hcl
+source "azure-arm" "server_2019" {
+  use_azure_cli_auth                               = true
+  build_resource_group_name                        = "ManagedImages-RGP"
+  build_key_vault_name                             = "Example-Packer-Keyvault"
+  os_type                                          = "Windows"
+  image_publisher                                  = "MicrosoftWindowsServer"
+  image_offer                                      = "WindowsServer"
+  image_sku                                        = "2019-Datacenter"
+  vm_size                                          = "Standard_D2as_v5"
+  os_disk_size_gb                                  = 130
+  shared_gallery_image_version_exclude_from_latest = false
+  virtual_network_resource_group_name              = "VNET-Resource-Group"
+  virtual_network_name                             = "My-VNET"
+  virtual_network_subnet_name                      = "My-Subnet"
+  private_virtual_network_with_public_ip           = false
+  communicator                                     = "winrm"
+  winrm_use_ssl                                    = true
+  winrm_insecure                                   = true
+  winrm_timeout                                    = "3m"
+  winrm_username                                   = "Packer"
+  managed_image_name                               = "Managed-Image-Name"
+  managed_image_resource_group_name                = "ManagedImages-RGP"
+  managed_image_storage_account_type               = "Standard_LRS"
+
+  shared_image_gallery_destination {
+    resource_group       = "ManagedImages-RGP"
+    gallery_name         = "MyGallery"
+    image_name           = "Server2019"
+    storage_account_type = "Standard_LRS"
+  }
+}
+
+build {
+  sources = [
+    "sources.azure-arm.server_2019",
+  ]
+
+  provisioner "shell-local" {
+    inline_shebang = "/bin/bash -e"
+    inline = [
+      "pipx inject python-env-name \"pywinrm\"",
+    ]
+  }
+
+  provisioner "powershell" {
+    script = "../../scripts/ConfigureRemotingForAnsible.ps1"
+  }
+
+  provisioner "ansible" {
+    skip_version_check  = false
+    user                = "Packer"
+    use_proxy           = false
+    playbook_file       = "windows2019.yml"
+    extra_arguments = [
+      "-e",
+      "ansible_winrm_server_cert_validation=ignore",
+      "-e",
+      "ansible_winrm_transport=ntlm",
+    ]
+  }
 ```
 
 </Tab>
