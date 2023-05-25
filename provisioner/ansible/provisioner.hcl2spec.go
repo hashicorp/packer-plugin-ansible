@@ -45,6 +45,7 @@ type FlatConfig struct {
 	RolesPath             *string           `mapstructure:"roles_path" cty:"roles_path" hcl:"roles_path"`
 	CollectionsPath       *string           `mapstructure:"collections_path" cty:"collections_path" hcl:"collections_path"`
 	UseProxy              *bool             `mapstructure:"use_proxy" cty:"use_proxy" hcl:"use_proxy"`
+	WinRMUseHTTP          *bool             `mapstructure:"ansible_winrm_use_http" cty:"ansible_winrm_use_http" hcl:"ansible_winrm_use_http"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -94,6 +95,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"roles_path":                 &hcldec.AttrSpec{Name: "roles_path", Type: cty.String, Required: false},
 		"collections_path":           &hcldec.AttrSpec{Name: "collections_path", Type: cty.String, Required: false},
 		"use_proxy":                  &hcldec.AttrSpec{Name: "use_proxy", Type: cty.Bool, Required: false},
+		"ansible_winrm_use_http":     &hcldec.AttrSpec{Name: "ansible_winrm_use_http", Type: cty.Bool, Required: false},
 	}
 	return s
 }

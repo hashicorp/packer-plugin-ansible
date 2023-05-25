@@ -15,6 +15,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/packer-plugin-sdk/multistep/commonsteps"
@@ -24,7 +25,8 @@ import (
 )
 
 // Be sure to remove the Ansible stub file in each test with:
-//   defer os.Remove(config["command"].(string))
+//
+//	defer os.Remove(config["command"].(string))
 func testConfig(t *testing.T) map[string]interface{} {
 	m := make(map[string]interface{})
 	wd, err := os.Getwd()
@@ -739,5 +741,105 @@ func TestUseProxy(t *testing.T) {
 			t.Fatalf("%s", tc.explanation)
 		}
 		os.Remove(p.config.Command)
+	}
+}
+
+func TestProvisionerPrepare_WinRMSSL(t *testing.T) {
+	type winrmUseHTTPValue int
+
+	const (
+		noWinRMUseHTTPOpt winrmUseHTTPValue = iota
+		trueWinRMUseHTTPOpt
+		falseWinRMUseHTTPOpt
+	)
+
+	testcases := []struct {
+		name            string
+		winRMUseHTTP    winrmUseHTTPValue
+		extraArgs       []string
+		expectedArgs    []string
+		expectSchemeArg bool
+	}{
+		{
+			name:            "ansible_winrm_use_http set to true, should specify -e ansible_winrm_scheme",
+			winRMUseHTTP:    trueWinRMUseHTTPOpt,
+			extraArgs:       []string{},
+			expectedArgs:    []string{},
+			expectSchemeArg: true,
+		},
+		{
+			name:            "ansible_winrm_use_http set to true, option defined, should not specify -e ansible_winrm_scheme twice",
+			winRMUseHTTP:    trueWinRMUseHTTPOpt,
+			extraArgs:       []string{"-e", "ansible_winrm_scheme=http"},
+			expectedArgs:    []string{},
+			expectSchemeArg: true,
+		},
+		{
+			name:            "ansible_winrm_use_http set to false, option defined, should not specify -e ansible_winrm_scheme twice",
+			winRMUseHTTP:    falseWinRMUseHTTPOpt,
+			extraArgs:       []string{"-e", "ansible_winrm_scheme=http"},
+			expectedArgs:    []string{},
+			expectSchemeArg: true,
+		},
+		{
+			name:            "ansible_winrm_use_http set to false, option defined, should not specify -e ansible_winrm_scheme at all",
+			winRMUseHTTP:    falseWinRMUseHTTPOpt,
+			extraArgs:       []string{},
+			expectedArgs:    []string{},
+			expectSchemeArg: false,
+		},
+		{
+			name:            "ansible_winrm_use_http set to false, option not defined, should not specify -e ansible_winrm_scheme",
+			winRMUseHTTP:    noWinRMUseHTTPOpt,
+			extraArgs:       []string{"-e", "ansible_winrm_scheme=http"},
+			expectedArgs:    []string{},
+			expectSchemeArg: true,
+		},
+		{
+			name:            "ansible_winrm_use_http set to false, option not defined, should not specify -e ansible_winrm_scheme at all",
+			winRMUseHTTP:    noWinRMUseHTTPOpt,
+			extraArgs:       []string{},
+			expectedArgs:    []string{},
+			expectSchemeArg: false,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			config := testConfig(t)
+			defer os.Remove(config["command"].(string))
+
+			config["playbook_file"] = "test-fixtures/long-debug-message.yml"
+			config["extra_arguments"] = tc.extraArgs
+
+			switch tc.winRMUseHTTP {
+			case noWinRMUseHTTPOpt:
+			case trueWinRMUseHTTPOpt:
+				config["ansible_winrm_use_http"] = true
+			case falseWinRMUseHTTPOpt:
+				config["ansible_winrm_use_http"] = false
+			}
+
+			var p Provisioner
+			err := p.Prepare(config)
+			if err != nil {
+				t.Fatalf("prepare failed: %s", err)
+			}
+
+			ansibleArgs := p.config.ExtraArguments
+			schemaArgCount := 0
+			for _, arg := range ansibleArgs {
+				if strings.HasPrefix(arg, "ansible_winrm_scheme") {
+					schemaArgCount++
+				}
+			}
+
+			if tc.expectSchemeArg && schemaArgCount != 1 {
+				t.Errorf("expected exactly one ansible_winrm_scheme argument, got %d", schemaArgCount)
+			}
+			if !tc.expectSchemeArg && schemaArgCount != 0 {
+				t.Errorf("expected ansible_winrm_scheme argument not to be defined, got %d", schemaArgCount)
+			}
+		})
 	}
 }

@@ -237,7 +237,22 @@ type Config struct {
 	// Currently, this defaults to `true` for all connection types. In the future,
 	// this option will be changed to default to `false` for SSH and WinRM
 	// connections where the provisioner has access to a host IP.
-	UseProxy     config.Trilean `mapstructure:"use_proxy"`
+	UseProxy config.Trilean `mapstructure:"use_proxy"`
+	// Force WinRM to use HTTP instead of HTTPS.
+	//
+	// Set this to true to force Ansible to use HTTP instead of HTTPS to communicate
+	// over WinRM to the destination host.
+	//
+	// Ansible uses the port as a heuristic to determine whether to use HTTP
+	// or not. In the current state, Packer assigns a random port for connecting
+	// to WinRM and Ansible's heuristic fails to determine that it should be
+	// using HTTP, even when the communicator is setup to use it.
+	//
+	// Alternatively, you may also directly add the following arguments to the
+	// `extra_arguments` section for ansible: `"-e", "ansible_winrm_scheme=http"`.
+	//
+	// Default: `false`
+	WinRMUseHTTP bool `mapstructure:"ansible_winrm_use_http"`
 	userWasEmpty bool
 }
 
@@ -374,6 +389,21 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf(
 			"Invalid value for ansible_proxy_key_type: %q. Supported values are ECDSA or RSA.",
 			p.config.AdapterKeyType))
+	}
+
+	if p.config.WinRMUseHTTP {
+		addWinRMScheme := true
+		for _, arg := range p.config.ExtraArguments {
+			if strings.HasPrefix(arg, "ansible_winrm_scheme") {
+				addWinRMScheme = false
+				log.Printf("ansible_winrm_scheme already defined in arguments, will ignore")
+				break
+			}
+		}
+		if addWinRMScheme {
+			log.Printf("setting http as winrm scheme")
+			p.config.ExtraArguments = append(p.config.ExtraArguments, "-e", "ansible_winrm_scheme=http")
+		}
 	}
 
 	if errs != nil && len(errs.Errors) > 0 {

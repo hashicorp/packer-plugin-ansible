@@ -190,4 +190,19 @@
   this option will be changed to default to `false` for SSH and WinRM
   connections where the provisioner has access to a host IP.
 
+- `ansible_winrm_use_http` (bool) - Force WinRM to use HTTP instead of HTTPS.
+  
+  Set this to true to force Ansible to use HTTP instead of HTTPS to communicate
+  over WinRM to the destination host.
+  
+  Ansible uses the port as a heuristic to determine whether to use HTTP
+  or not. In the current state, Packer assigns a random port for connecting
+  to WinRM and Ansible's heuristic fails to determine that it should be
+  using HTTP, even when the communicator is setup to use it.
+  
+  Alternatively, you may also directly add the following arguments to the
+  `extra_arguments` section for ansible: `"-e", "ansible_winrm_scheme=http"`.
+  
+  Default: `false`
+
 <!-- End of code generated from the comments of the Config struct in provisioner/ansible/provisioner.go; -->
