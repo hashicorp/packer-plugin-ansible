@@ -10,8 +10,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -942,28 +943,32 @@ func newUserKey(pubKeyFile string) (*userKey, error) {
 		return userKey, nil
 	}
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	privKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return nil, errors.New("Failed to generate key pair")
 	}
-	userKey.PublicKey, err = ssh.NewPublicKey(key.Public())
+	userKey.PublicKey, err = ssh.NewPublicKey(&privKey.PublicKey)
 	if err != nil {
-		return nil, errors.New("Failed to extract public key from generated key pair")
+		return nil, fmt.Errorf("Failed to extract public key from generated key pair: %s", err)
 	}
 
 	// To support Ansible calling back to us we need to write
 	// this file down
-	privateKeyDer := x509.MarshalPKCS1PrivateKey(key)
-	privateKeyBlock := pem.Block{
-		Type:    "RSA PRIVATE KEY",
+	privateKeyDer, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to serialise private key for adapter: %s", err)
+	}
+	privateKeyBlock := &pem.Block{
+		Type:    "PRIVATE KEY",
 		Headers: nil,
 		Bytes:   privateKeyDer,
 	}
+
 	tf, err := tmp.File("ansible-key")
 	if err != nil {
 		return nil, errors.New("failed to create temp file for generated key")
 	}
-	_, err = tf.Write(pem.EncodeToMemory(&privateKeyBlock))
+	err = pem.Encode(tf, privateKeyBlock)
 	if err != nil {
 		return nil, errors.New("failed to write private key to temp file")
 	}
@@ -998,12 +1003,12 @@ func newSigner(privKeyFile string) (*signer, error) {
 		return signer, nil
 	}
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	privKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		return nil, errors.New("Failed to generate server key pair")
 	}
 
-	signer.Signer, err = ssh.NewSignerFromKey(key)
+	signer.Signer, err = ssh.NewSignerFromKey(privKey)
 	if err != nil {
 		return nil, errors.New("Failed to extract private key from generated key pair")
 	}
@@ -1011,7 +1016,7 @@ func newSigner(privKeyFile string) (*signer, error) {
 	return signer, nil
 }
 
-//checkArg Evaluates if argname is in args
+// checkArg Evaluates if argname is in args
 func checkArg(argname string, args []string) bool {
 	for _, arg := range args {
 		for _, ansibleArg := range strings.Split(arg, "=") {
