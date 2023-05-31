@@ -97,6 +97,16 @@
    this key is generated, the corresponding private key is passed to
    `ansible-playbook` with the `-e ansible_ssh_private_key_file` option.
 
+- `ansible_proxy_key_type` (string) - Change the key type used for the adapter.
+  
+  Supported values:
+  
+  * ECDSA (default)
+  * RSA
+  
+  NOTE: using RSA may cause problems if the key is used to authenticate with rsa-sha1
+  as modern OpenSSH versions reject this by default as it is unsafe.
+
 - `sftp_command` (string) - The command to run on the machine being
    provisioned by Packer to handle the SFTP protocol that Ansible will use to
    transfer files. The command should read and write on stdin and stdout,

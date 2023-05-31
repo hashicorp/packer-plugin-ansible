@@ -30,6 +30,7 @@ type FlatConfig struct {
 	LocalPort             *int              `mapstructure:"local_port" cty:"local_port" hcl:"local_port"`
 	SSHHostKeyFile        *string           `mapstructure:"ssh_host_key_file" cty:"ssh_host_key_file" hcl:"ssh_host_key_file"`
 	SSHAuthorizedKeyFile  *string           `mapstructure:"ssh_authorized_key_file" cty:"ssh_authorized_key_file" hcl:"ssh_authorized_key_file"`
+	AdapterKeyType        *string           `mapstructure:"ansible_proxy_key_type" cty:"ansible_proxy_key_type" hcl:"ansible_proxy_key_type"`
 	SFTPCmd               *string           `mapstructure:"sftp_command" cty:"sftp_command" hcl:"sftp_command"`
 	SkipVersionCheck      *bool             `mapstructure:"skip_version_check" cty:"skip_version_check" hcl:"skip_version_check"`
 	UseSFTP               *bool             `mapstructure:"use_sftp" cty:"use_sftp" hcl:"use_sftp"`
@@ -78,6 +79,7 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"local_port":                 &hcldec.AttrSpec{Name: "local_port", Type: cty.Number, Required: false},
 		"ssh_host_key_file":          &hcldec.AttrSpec{Name: "ssh_host_key_file", Type: cty.String, Required: false},
 		"ssh_authorized_key_file":    &hcldec.AttrSpec{Name: "ssh_authorized_key_file", Type: cty.String, Required: false},
+		"ansible_proxy_key_type":     &hcldec.AttrSpec{Name: "ansible_proxy_key_type", Type: cty.String, Required: false},
 		"sftp_command":               &hcldec.AttrSpec{Name: "sftp_command", Type: cty.String, Required: false},
 		"skip_version_check":         &hcldec.AttrSpec{Name: "skip_version_check", Type: cty.Bool, Required: false},
 		"use_sftp":                   &hcldec.AttrSpec{Name: "use_sftp", Type: cty.Bool, Required: false},
