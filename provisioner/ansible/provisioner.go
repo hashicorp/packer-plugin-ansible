@@ -13,6 +13,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
@@ -145,6 +146,16 @@ type Config struct {
 	//  this key is generated, the corresponding private key is passed to
 	//  `ansible-playbook` with the `-e ansible_ssh_private_key_file` option.
 	SSHAuthorizedKeyFile string `mapstructure:"ssh_authorized_key_file"`
+	// Change the key type used for the adapter.
+	//
+	// Supported values:
+	//
+	// * ECDSA (default)
+	// * RSA
+	//
+	// NOTE: using RSA may cause problems if the key is used to authenticate with rsa-sha1
+	// as modern OpenSSH versions reject this by default as it is unsafe.
+	AdapterKeyType string `mapstructure:"ansible_proxy_key_type"`
 	// The command to run on the machine being
 	//  provisioned by Packer to handle the SFTP protocol that Ansible will use to
 	//  transfer files. The command should read and write on stdin and stdout,
@@ -352,6 +363,19 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 		p.executeAnsibleFunc = p.executeAnsible
 	}
 
+	if p.config.AdapterKeyType == "" {
+		p.config.AdapterKeyType = "ECDSA"
+	}
+	p.config.AdapterKeyType = strings.ToUpper(p.config.AdapterKeyType)
+
+	switch p.config.AdapterKeyType {
+	case "RSA", "ECDSA":
+	default:
+		errs = packersdk.MultiErrorAppend(errs, fmt.Errorf(
+			"Invalid value for ansible_proxy_key_type: %q. Supported values are ECDSA or RSA.",
+			p.config.AdapterKeyType))
+	}
+
 	if errs != nil && len(errs.Errors) > 0 {
 		return errs
 	}
@@ -388,12 +412,12 @@ func (p *Provisioner) getVersion() error {
 func (p *Provisioner) setupAdapter(ui packersdk.Ui, comm packersdk.Communicator) (string, error) {
 	ui.Message("Setting up proxy adapter for Ansible....")
 
-	k, err := newUserKey(p.config.SSHAuthorizedKeyFile)
+	k, err := newUserKey(p.config.SSHAuthorizedKeyFile, p.config.AdapterKeyType)
 	if err != nil {
 		return "", err
 	}
 
-	hostSigner, err := newSigner(p.config.SSHHostKeyFile)
+	hostSigner, err := newSigner(p.config.SSHHostKeyFile, p.config.AdapterKeyType)
 	if err != nil {
 		return "", fmt.Errorf("error creating host signer: %s", err)
 	}
@@ -928,7 +952,7 @@ type userKey struct {
 	privKeyFile string
 }
 
-func newUserKey(pubKeyFile string) (*userKey, error) {
+func newUserKey(pubKeyFile string, keyType string) (*userKey, error) {
 	userKey := new(userKey)
 	if len(pubKeyFile) > 0 {
 		pubKeyBytes, err := ioutil.ReadFile(pubKeyFile)
@@ -943,34 +967,21 @@ func newUserKey(pubKeyFile string) (*userKey, error) {
 		return userKey, nil
 	}
 
-	privKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	if err != nil {
-		return nil, errors.New("Failed to generate key pair")
-	}
-	userKey.PublicKey, err = ssh.NewPublicKey(&privKey.PublicKey)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to extract public key from generated key pair: %s", err)
-	}
-
-	// To support Ansible calling back to us we need to write
-	// this file down
-	privateKeyDer, err := x509.MarshalPKCS8PrivateKey(privKey)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to serialise private key for adapter: %s", err)
-	}
-	privateKeyBlock := &pem.Block{
-		Type:    "PRIVATE KEY",
-		Headers: nil,
-		Bytes:   privateKeyDer,
-	}
-
 	tf, err := tmp.File("ansible-key")
 	if err != nil {
 		return nil, errors.New("failed to create temp file for generated key")
 	}
-	err = pem.Encode(tf, privateKeyBlock)
+
+	switch keyType {
+	case "RSA":
+		err = generateRSAKeyToFile(userKey, tf)
+	case "ECDSA":
+		err = generateECDSAKeyToFile(userKey, tf)
+	default:
+		err = fmt.Errorf("unknown key type: %q", keyType)
+	}
 	if err != nil {
-		return nil, errors.New("failed to write private key to temp file")
+		return nil, err
 	}
 
 	err = tf.Close()
@@ -982,11 +993,65 @@ func newUserKey(pubKeyFile string) (*userKey, error) {
 	return userKey, nil
 }
 
+func generateECDSAKeyToFile(uk *userKey, target *os.File) error {
+	privKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		return errors.New("Failed to generate key pair")
+	}
+	uk.PublicKey, err = ssh.NewPublicKey(&privKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("Failed to extract public key from generated key pair: %s", err)
+	}
+
+	// To support Ansible calling back to us we need to write
+	// this file down
+	privateKeyDer, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		return fmt.Errorf("Failed to serialise private key for adapter: %s", err)
+	}
+	privateKeyBlock := &pem.Block{
+		Type:    "PRIVATE KEY",
+		Headers: nil,
+		Bytes:   privateKeyDer,
+	}
+
+	err = pem.Encode(target, privateKeyBlock)
+	if err != nil {
+		return errors.New("failed to write private key to temp file")
+	}
+
+	return nil
+}
+
+func generateRSAKeyToFile(uk *userKey, target *os.File) error {
+	privKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return errors.New("Failed to generate key pair")
+	}
+	uk.PublicKey, err = ssh.NewPublicKey(&privKey.PublicKey)
+	if err != nil {
+		return fmt.Errorf("Failed to extract public key from generated key pair: %s", err)
+	}
+
+	privateKeyBlock := &pem.Block{
+		Type:    "RSA PRIVATE KEY",
+		Headers: nil,
+		Bytes:   x509.MarshalPKCS1PrivateKey(privKey),
+	}
+
+	err = pem.Encode(target, privateKeyBlock)
+	if err != nil {
+		return errors.New("failed to write private key to temp file")
+	}
+
+	return nil
+}
+
 type signer struct {
 	ssh.Signer
 }
 
-func newSigner(privKeyFile string) (*signer, error) {
+func newSigner(privKeyFile string, keyType string) (*signer, error) {
 	signer := new(signer)
 
 	if len(privKeyFile) > 0 {
@@ -1003,9 +1068,22 @@ func newSigner(privKeyFile string) (*signer, error) {
 		return signer, nil
 	}
 
-	privKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	if err != nil {
-		return nil, errors.New("Failed to generate server key pair")
+	var privKey interface{}
+	var err error
+
+	switch keyType {
+	case "RSA":
+		privKey, err = rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			return nil, errors.New("Failed to generate server key pair")
+		}
+	case "ECDSA":
+		privKey, err = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+		if err != nil {
+			return nil, errors.New("Failed to generate server key pair")
+		}
+	default:
+		return nil, fmt.Errorf("Unsupported key type: %q", keyType)
 	}
 
 	signer.Signer, err = ssh.NewSignerFromKey(privKey)
