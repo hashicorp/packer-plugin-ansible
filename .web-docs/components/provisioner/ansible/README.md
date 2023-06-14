@@ -1,13 +1,3 @@
----
-description: |
-  The ansible Packer provisioner allows Ansible playbooks to be run to provision
-  the machine.
-page_title: Ansible - Provisioners
-nav_title: Ansible (Remote)
----
-
-# Ansible Provisioner
-
 Type: `ansible`
 
 The `ansible` Packer provisioner runs Ansible playbooks. It dynamically creates
@@ -96,13 +86,294 @@ Example playbook:
 
 Required Parameters:
 
-@include 'provisioner/ansible/Config-required.mdx'
+<!-- Code generated from the comments of the Config struct in provisioner/ansible/provisioner.go; DO NOT EDIT MANUALLY -->
+
+- `playbook_file` (string) - The playbook to be run by Ansible.
+
+<!-- End of code generated from the comments of the Config struct in provisioner/ansible/provisioner.go; -->
+
 
 Optional Parameters:
 
-@include '/provisioner/ansible/Config-not-required.mdx'
+<!-- Code generated from the comments of the Config struct in provisioner/ansible/provisioner.go; DO NOT EDIT MANUALLY -->
 
-@include 'provisioners/common-config.mdx'
+- `command` (string) - The command to invoke ansible. Defaults to
+   `ansible-playbook`. If you would like to provide a more complex command,
+   for example, something that sets up a virtual environment before calling
+   ansible, take a look at the ansible wrapper guide below for inspiration.
+   Please note that Packer expects Command to be a path to an executable.
+   Arbitrary bash scripting will not work and needs to go inside an
+   executable script.
+
+- `extra_arguments` ([]string) - Extra arguments to pass to Ansible. These arguments _will not_ be passed
+  through a shell and arguments should not be quoted. Usage example:
+  
+  ```json
+     "extra_arguments": [ "--extra-vars", "Region={{user `Region`}} Stage={{user `Stage`}}" ]
+  ```
+  
+  In certain scenarios where you want to pass ansible command line
+  arguments that include parameter and value (for example
+  `--vault-password-file pwfile`), from ansible documentation this is
+  correct format but that is NOT accepted here. Instead you need to do it
+  like `--vault-password-file=pwfile`.
+  
+  If you are running a Windows build on AWS, Azure, Google Compute, or
+  OpenStack and would like to access the auto-generated password that
+  Packer uses to connect to a Windows instance via WinRM, you can use the
+  template variable
+  
+  ```build.Password``` in HCL templates or ```{{ build `Password`}}``` in
+  legacy JSON templates. For example:
+  
+  in JSON templates:
+  
+  ```json "extra_arguments": [
+     "--extra-vars", "winrm_password={{ build `Password`}}"
+  ] ```
+  
+  in HCL templates: ```hcl extra_arguments = [
+     "--extra-vars", "winrm_password=${build.Password}"
+  ] ```
+  
+  If the lefthand side of a value contains 'secret' or 'password' (case
+  insensitive) it will be hidden from output. For example, passing
+  "my_password=secr3t" will hide "secr3t" from output.
+
+- `ansible_env_vars` ([]string) - Environment variables to set before
+    running Ansible. Usage example:
+  
+    ```json
+      "ansible_env_vars": [ "ANSIBLE_HOST_KEY_CHECKING=False", "ANSIBLE_SSH_ARGS='-o ForwardAgent=yes -o ControlMaster=auto -o ControlPersist=60s'", "ANSIBLE_NOCOLOR=True" ]
+    ```
+  
+    This is a [template engine](/packer/docs/templates/legacy_json_templates/engine). Therefore, you
+    may use user variables and template functions in this field.
+  
+    For example, if you are running a Windows build on AWS, Azure,
+    Google Compute, or OpenStack and would like to access the auto-generated
+    password that Packer uses to connect to a Windows instance via WinRM, you
+    can use the template variable `{{.WinRMPassword}}` in this option. Example:
+  
+    ```json
+    "ansible_env_vars": [ "WINRM_PASSWORD={{.WinRMPassword}}" ],
+    ```
+
+- `ansible_ssh_extra_args` ([]string) - Specifies --ssh-extra-args on command line defaults to -o IdentitiesOnly=yes
+
+- `groups` ([]string) - The groups into which the Ansible host should
+   be placed. When unspecified, the host is not associated with any groups.
+
+- `empty_groups` ([]string) - The groups which should be present in
+   inventory file but remain empty.
+
+- `host_alias` (string) - The alias by which the Ansible host should be
+  known. Defaults to `default`. This setting is ignored when using a custom
+  inventory file.
+
+- `user` (string) - The `ansible_user` to use. Defaults to the user running
+   packer, NOT the user set for your communicator. If you want to use the same
+   user as the communicator, you will need to manually set it again in this
+   field.
+
+- `local_port` (int) - The port on which to attempt to listen for SSH
+   connections. This value is a starting point. The provisioner will attempt
+   listen for SSH connections on the first available of ten ports, starting at
+   `local_port`. A system-chosen port is used when `local_port` is missing or
+   empty.
+
+- `ssh_host_key_file` (string) - The SSH key that will be used to run the SSH
+   server on the host machine to forward commands to the target machine.
+   Ansible connects to this server and will validate the identity of the
+   server using the system known_hosts. The default behavior is to generate
+   and use a onetime key. Host key checking is disabled via the
+   `ANSIBLE_HOST_KEY_CHECKING` environment variable if the key is generated.
+
+- `ssh_authorized_key_file` (string) - The SSH public key of the Ansible
+   `ssh_user`. The default behavior is to generate and use a onetime key. If
+   this key is generated, the corresponding private key is passed to
+   `ansible-playbook` with the `-e ansible_ssh_private_key_file` option.
+
+- `ansible_proxy_key_type` (string) - Change the key type used for the adapter.
+  
+  Supported values:
+  
+  * ECDSA (default)
+  * RSA
+  
+  NOTE: using RSA may cause problems if the key is used to authenticate with rsa-sha1
+  as modern OpenSSH versions reject this by default as it is unsafe.
+
+- `sftp_command` (string) - The command to run on the machine being
+   provisioned by Packer to handle the SFTP protocol that Ansible will use to
+   transfer files. The command should read and write on stdin and stdout,
+   respectively. Defaults to `/usr/lib/sftp-server -e`.
+
+- `skip_version_check` (bool) - Check if ansible is installed prior to
+   running. Set this to `true`, for example, if you're going to install
+   ansible during the packer run.
+
+- `use_sftp` (bool) - Use SFTP
+
+- `inventory_directory` (string) - The directory in which to place the
+   temporary generated Ansible inventory file. By default, this is the
+   system-specific temporary file location. The fully-qualified name of this
+   temporary file will be passed to the `-i` argument of the `ansible` command
+   when this provisioner runs ansible. Specify this if you have an existing
+   inventory directory with `host_vars` `group_vars` that you would like to
+   use in the playbook that this provisioner will run.
+
+- `inventory_file_template` (string) - This template represents the format for the lines added to the temporary
+  inventory file that Packer will create to run Ansible against your image.
+  The default for recent versions of Ansible is:
+  "{{ .HostAlias }} ansible_host={{ .Host }} ansible_user={{ .User }} ansible_port={{ .Port }}\n"
+  Available template engines are: This option is a template engine;
+  variables available to you include the examples in the default (Host,
+  HostAlias, User, Port) as well as any variables available to you via the
+  "build" template engine.
+
+- `inventory_file` (string) - The inventory file to use during provisioning.
+   When unspecified, Packer will create a temporary inventory file and will
+   use the `host_alias`.
+
+- `keep_inventory_file` (bool) - If `true`, the Ansible provisioner will
+   not delete the temporary inventory file it creates in order to connect to
+   the instance. This is useful if you are trying to debug your ansible run
+   and using "--on-error=ask" in order to leave your instance running while you
+   test your playbook. this option is not used if you set an `inventory_file`.
+
+- `galaxy_file` (string) - A requirements file which provides a way to
+   install roles or collections with the [ansible-galaxy
+   cli](https://docs.ansible.com/ansible/latest/galaxy/user_guide.html#the-ansible-galaxy-command-line-tool)
+   on the local machine before executing `ansible-playbook`. By default, this is empty.
+
+- `galaxy_command` (string) - The command to invoke ansible-galaxy. By default, this is
+  `ansible-galaxy`.
+
+- `galaxy_force_install` (bool) - Force overwriting an existing role.
+   Adds `--force` option to `ansible-galaxy` command. By default, this is
+   `false`.
+
+- `galaxy_force_with_deps` (bool) - Force overwriting an existing role and its dependencies.
+   Adds `--force-with-deps` option to `ansible-galaxy` command. By default,
+   this is `false`.
+
+- `roles_path` (string) - The path to the directory on your local system in which to
+    install the roles. Adds `--roles-path /path/to/your/roles` to
+    `ansible-galaxy` command. By default, this is empty, and thus `--roles-path`
+    option is not added to the command.
+
+- `collections_path` (string) - The path to the directory on your local system in which to
+    install the collections. Adds `--collections-path /path/to/your/collections` to
+    `ansible-galaxy` command. By default, this is empty, and thus `--collections-path`
+    option is not added to the command.
+
+- `use_proxy` (boolean) - When `true`, set up a localhost proxy adapter
+  so that Ansible has an IP address to connect to, even if your guest does not
+  have an IP address. For example, the adapter is necessary for Docker builds
+  to use the Ansible provisioner. If you set this option to `false`, but
+  Packer cannot find an IP address to connect Ansible to, it will
+  automatically set up the adapter anyway.
+  
+   In order for Ansible to connect properly even when use_proxy is false, you
+  need to make sure that you are either providing a valid username and ssh key
+  to the ansible provisioner directly, or that the username and ssh key
+  being used by the ssh communicator will work for your needs. If you do not
+  provide a user to ansible, it will use the user associated with your
+  builder, not the user running Packer.
+   use_proxy=false is currently only supported for SSH and WinRM.
+  
+  Currently, this defaults to `true` for all connection types. In the future,
+  this option will be changed to default to `false` for SSH and WinRM
+  connections where the provisioner has access to a host IP.
+
+- `ansible_winrm_use_http` (bool) - Force WinRM to use HTTP instead of HTTPS.
+  
+  Set this to true to force Ansible to use HTTP instead of HTTPS to communicate
+  over WinRM to the destination host.
+  
+  Ansible uses the port as a heuristic to determine whether to use HTTP
+  or not. In the current state, Packer assigns a random port for connecting
+  to WinRM and Ansible's heuristic fails to determine that it should be
+  using HTTP, even when the communicator is setup to use it.
+  
+  Alternatively, you may also directly add the following arguments to the
+  `extra_arguments` section for ansible: `"-e", "ansible_winrm_scheme=http"`.
+  
+  Default: `false`
+
+<!-- End of code generated from the comments of the Config struct in provisioner/ansible/provisioner.go; -->
+
+
+Parameters common to all provisioners:
+
+- `pause_before` (duration) - Sleep for duration before execution.
+
+- `max_retries` (int) - Max times the provisioner will retry in case of failure. Defaults to zero (0). Zero means an error will not be retried.
+
+- `only` (array of string) - Only run the provisioner for listed builder(s)
+  by name.
+
+- `override` (object) - Override the builder with different settings for a
+  specific builder, eg :
+
+  In HCL2:
+
+  ```hcl
+  source "null" "example1" {
+    communicator = "none"
+  }
+
+  source "null" "example2" {
+    communicator = "none"
+  }
+
+  build {
+    sources = ["source.null.example1", "source.null.example2"]
+    provisioner "shell-local" {
+      inline = ["echo not overridden"]
+      override = {
+        example1 = {
+          inline = ["echo yes overridden"]
+        }
+      }
+    }
+  }
+  ```
+
+  In JSON:
+
+  ```json
+  {
+    "builders": [
+      {
+        "type": "null",
+        "name": "example1",
+        "communicator": "none"
+      },
+      {
+        "type": "null",
+        "name": "example2",
+        "communicator": "none"
+      }
+    ],
+    "provisioners": [
+      {
+        "type": "shell-local",
+        "inline": ["echo not overridden"],
+        "override": {
+          "example1": {
+            "inline": ["echo yes overridden"]
+          }
+        }
+      }
+    ]
+  }
+  ```
+
+- `timeout` (duration) - If the provisioner takes more than for example
+  `1h10m1s` or `10m` to finish, the provisioner will timeout and fail.
+
 
 ## Default Extra Variables
 
