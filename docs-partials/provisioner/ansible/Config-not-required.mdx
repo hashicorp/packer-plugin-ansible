@@ -31,13 +31,19 @@
   
   in JSON templates:
   
-  ```json "extra_arguments": [
+  ```json
+  "extra_arguments": [
      "--extra-vars", "winrm_password={{ build `Password`}}"
-  ] ```
+  ]
+  ```
   
-  in HCL templates: ```hcl extra_arguments = [
+  in HCL templates:
+  
+  ```hcl
+  extra_arguments = [
      "--extra-vars", "winrm_password=${build.Password}"
-  ] ```
+  ]
+  ```
   
   If the lefthand side of a value contains 'secret' or 'password' (case
   insensitive) it will be hidden from output. For example, passing
