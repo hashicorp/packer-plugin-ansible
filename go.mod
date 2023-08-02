@@ -100,3 +100,5 @@ require (
 
 // Incorrect plugin registration for ansible-local; see packer-plugin-ansible/pull/44
 retract [v0.0.1, v0.0.2]
+
+replace github.com/zclconf/go-cty => github.com/nywilken/go-cty v1.12.1 // added by packer-sdc fix as noted in github.com/hashicorp/packer-plugin-sdk/issues/187
