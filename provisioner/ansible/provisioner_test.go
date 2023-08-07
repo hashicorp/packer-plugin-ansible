@@ -484,6 +484,18 @@ func TestCreateCmdArgs(t *testing.T) {
 			ExpectedEnvVars:     []string{"ENV_1=pancakes", "ENV_2=bananas"},
 		},
 		{
+			// SSH with private key and an extra argument and multiple ssh extra arguments.
+			TestName:            "SSH with private key and an extra argument and multiple ssh extra arguments",
+			PackerBuildName:     "packerparty",
+			generatedData:       basicGenData(nil),
+			ExtraArguments:      []string{"-e", "hello-world"},
+			AnsibleSSHExtraArgs: []string{"-o HostKeyAlgorithms=+ssh-rsa", "-o PubkeyAcceptedKeyTypes=+ssh-rsa", "-o IdentitiesOnly=no"},
+			AnsibleEnvVars:      []string{"ENV_1=pancakes", "ENV_2=bananas"},
+			callArgs:            []string{commonsteps.HttpAddrNotImplemented, "/var/inventory", "test-playbook.yml", "/path/to/privkey.pem"},
+			ExpectedArgs:        []string{"-e", "packer_build_name=\"packerparty\"", "-e", "packer_builder_type=fakebuilder", "--ssh-extra-args", "'-o HostKeyAlgorithms=+ssh-rsa' '-o PubkeyAcceptedKeyTypes=+ssh-rsa' '-o IdentitiesOnly=no'", "-e", "ansible_ssh_private_key_file=/path/to/privkey.pem", "-e", "hello-world", "-i", "/var/inventory", "test-playbook.yml"},
+			ExpectedEnvVars:     []string{"ENV_1=pancakes", "ENV_2=bananas"},
+		},
+		{
 			TestName:        "SSH with private key and an extra argument and UseProxy",
 			PackerBuildName: "packerparty",
 			UseProxy:        confighelper.TriTrue,
