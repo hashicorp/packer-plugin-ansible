@@ -40,7 +40,7 @@ jobs:
       - name: Notify Release
         uses: ./integration-release-action
         with:
-          integration_identifier: 'packer/BrandonRomano/ansible'
+          integration_identifier: 'packer/hashicorp/ansible'
           release_version: ${{ github.event.inputs.version }}
           release_sha: ${{ github.event.inputs.branch }}
           github_token: ${{ secrets.GITHUB_TOKEN }}

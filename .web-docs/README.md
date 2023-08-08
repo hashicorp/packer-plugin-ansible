@@ -28,6 +28,6 @@ It is common practice to use the [shell provisioner](/packer/docs/provisioners/s
 
 #### Provisioners:
 
-- [ansible](/packer/integrations/BrandonRomano/ansible/latest/components/provisioner/ansible) - The Packer provisioner runs Ansible playbooks. It dynamically creates an Ansible inventory file configured to use SSH, runs an SSH server, executes ansible-playbook, and marshals Ansible plays through the SSH server to the machine being provisioned by Packer.
+- [ansible](/packer/integrations/hashicorp/ansible/latest/components/provisioner/ansible) - The Packer provisioner runs Ansible playbooks. It dynamically creates an Ansible inventory file configured to use SSH, runs an SSH server, executes ansible-playbook, and marshals Ansible plays through the SSH server to the machine being provisioned by Packer.
 
-- [ansible-local](/packer/integrations/BrandonRomano/ansible/latest/components/provisioner/ansibl-local) - The Packer provisioner will run ansible in ansible's "local" mode on the remote/guest VM using Playbook and Role files that exist on the guest VM. This means ansible must be installed on the remote/guest VM.
+- [ansible-local](/packer/integrations/hashicorp/ansible/latest/components/provisioner/ansibl-local) - The Packer provisioner will run ansible in ansible's "local" mode on the remote/guest VM using Playbook and Role files that exist on the guest VM. This means ansible must be installed on the remote/guest VM.
