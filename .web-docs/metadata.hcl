@@ -2,7 +2,7 @@
 # https://github.com/hashicorp/integration-template#metadata-configuration
 integration {
   name = "Ansible"
-  description = "TODO"
+  description = "The Ansible plugin allows users to execute as a provisioner during a Packer build."
   identifier = "packer/BrandonRomano/ansible"
   component {
     type = "provisioner"
