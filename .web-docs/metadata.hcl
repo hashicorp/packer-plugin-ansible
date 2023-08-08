@@ -3,7 +3,7 @@
 integration {
   name = "Ansible"
   description = "The Ansible plugin allows users to execute as a provisioner during a Packer build."
-  identifier = "packer/BrandonRomano/ansible"
+  identifier = "packer/hashicorp/ansible"
   component {
     type = "provisioner"
     name = "Ansible Local"
