@@ -838,7 +838,7 @@ func (p *Provisioner) createCmdArgs(httpAddr, inventory, playbook, privKeyFile s
 	if p.generatedData["ConnType"] == "ssh" && len(privKeyFile) > 0 {
 		// Add ssh extra args to set IdentitiesOnly
 		if len(p.config.AnsibleSSHExtraArgs) > 0 {
-			args = append(args, "--ssh-extra-args", fmt.Sprintf("'%s'", strings.Join(p.config.AnsibleSSHExtraArgs, " ")))
+			args = append(args, "--ssh-extra-args", fmt.Sprintf("'%s'", strings.Join(p.config.AnsibleSSHExtraArgs, "' '")))
 		} else {
 			args = append(args, "--ssh-extra-args", "'-o IdentitiesOnly=yes'")
 		}
