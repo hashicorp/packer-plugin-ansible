@@ -549,8 +549,12 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicator) error {
 	inventory := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(p.config.InventoryFile)))
 
+	packerHTTPAddr := p.generatedData["PackerHTTPAddr"]
+	if packerHTTPAddr == nil {
+		packerHTTPAddr = ""
+	}
 	extraArgs := fmt.Sprintf(" --extra-vars \"packer_build_name=%s packer_builder_type=%s packer_http_addr=%s -o IdentitiesOnly=yes\" ",
-		p.config.PackerBuildName, p.config.PackerBuilderType, p.generatedData["PackerHTTPAddr"])
+		p.config.PackerBuildName, p.config.PackerBuilderType, packerHTTPAddr)
 	if len(p.config.ExtraArguments) > 0 {
 		extraArgs = extraArgs + strings.Join(p.config.ExtraArguments, " ")
 	}
