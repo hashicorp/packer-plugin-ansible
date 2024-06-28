@@ -1,6 +1,8 @@
 module github.com/hashicorp/packer-plugin-ansible
 
-go 1.19
+go 1.21.0
+
+
 
 require (
 	github.com/hashicorp/hcl/v2 v2.19.1
