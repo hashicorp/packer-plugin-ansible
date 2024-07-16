@@ -9,7 +9,7 @@ packer {
   required_plugins {
     ansible = {
       version = "~> 1"
-      source = "github.com/hashicorp/ansible"
+      source = "github.com/hashicorp/packer-plugin-ansible"
     }
   }
 }
@@ -18,7 +18,7 @@ packer {
 Alternatively, you can use `packer plugins install` to manage installation of this plugin.
 
 ```sh
-packer plugins install github.com/hashicorp/ansible
+packer plugins install github.com/hashicorp/packer-plugin-ansible
 ```
 
 ### Components
