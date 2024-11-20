@@ -881,12 +881,12 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 	}
 	args, envvars := p.createCmdArgs(httpAddr, inventory, playbook, privKeyFile)
 
-	cmd := exec.Command(p.config.Command, args...)
-
 	cmd.Env = os.Environ()
 	if len(envvars) > 0 {
 		cmd.Env = append(cmd.Env, envvars...)
 	}
+
+	cmd := exec.Command(p.config.Command, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
