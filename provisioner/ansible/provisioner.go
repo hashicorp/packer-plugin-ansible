@@ -611,8 +611,8 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 
 	// Set up proxy if host IP is missing or communicator type is wrong.
 	if p.config.UseProxy.False() {
-		hostIP := generatedData["Host"].(string)
-		if hostIP == "" {
+		hostIP, ok := generatedData["Host"].(string)
+		if !ok || hostIP == "" {
 			ui.Error("Warning: use_proxy is false, but instance does" +
 				" not have an IP address to give to Ansible. Falling back" +
 				" to use localhost proxy.")
