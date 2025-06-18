@@ -100,7 +100,7 @@ Optional Parameters:
 - `command` (string) - The command to invoke ansible. Defaults to
    `ansible-playbook`. If you would like to provide a more complex command,
    for example, something that sets up a virtual environment before calling
-   ansible, take a look at the ansible wrapper guide below for inspiration.
+   ansible, take a look at the ansible wrapper guide [here](#using-a-wrapping-script-for-your-ansible-call) for inspiration.
    Please note that Packer expects Command to be a path to an executable.
    Arbitrary bash scripting will not work and needs to go inside an
    executable script.
@@ -496,7 +496,7 @@ There are two possible methods for using Ansible with the WinRM communicator.
 Please note that if you're having trouble getting Ansible to connect, you may
 want to take a look at the script that the Ansible project provides to help
 configure remoting for Ansible:
-https://github.com/ansible/ansible/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1
+https://github.com/ansible/ansible-documentation/blob/devel/examples/scripts/ConfigureRemotingForAnsible.ps1
 
 #### Method 1 (recommended)
 
@@ -820,7 +820,7 @@ Platform:
 ```
 
 -> **Warning:** Please note that if you're setting up WinRM for provisioning, you'll probably want to turn it off or restrict its permissions as part of a shutdown script at the end of Packer's provisioning process. For more details on the why/how, check out this useful blog post and the associated code:
-https://cloudywindows.io/post/winrm-for-provisioning-close-the-door-on-the-way-out-eh/
+https://missionimpossiblecode.io/post/winrm-for-provisioning-close-the-door-on-the-way-out-eh/
 
 ### Post i/o timeout errors
 

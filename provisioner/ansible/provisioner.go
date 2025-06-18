@@ -50,7 +50,7 @@ type Config struct {
 	// The command to invoke ansible. Defaults to
 	//  `ansible-playbook`. If you would like to provide a more complex command,
 	//  for example, something that sets up a virtual environment before calling
-	//  ansible, take a look at the ansible wrapper guide below for inspiration.
+	//  ansible, take a look at the ansible wrapper guide [here](#using-a-wrapping-script-for-your-ansible-call) for inspiration.
 	//  Please note that Packer expects Command to be a path to an executable.
 	//  Arbitrary bash scripting will not work and needs to go inside an
 	//  executable script.
@@ -611,8 +611,8 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 
 	// Set up proxy if host IP is missing or communicator type is wrong.
 	if p.config.UseProxy.False() {
-		hostIP := generatedData["Host"].(string)
-		if hostIP == "" {
+		hostIP, ok := generatedData["Host"].(string)
+		if !ok || hostIP == "" {
 			ui.Error("Warning: use_proxy is false, but instance does" +
 				" not have an IP address to give to Ansible. Falling back" +
 				" to use localhost proxy.")
