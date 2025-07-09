@@ -103,6 +103,7 @@ jobs:
     needs:
       - set-product-version
       - get-go-version
+      - plugin-check
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -152,6 +153,7 @@ jobs:
     needs:
       - set-product-version
       - get-go-version
+      - plugin-check
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -191,6 +193,7 @@ jobs:
     needs:
       - set-product-version
       - get-go-version
+      - plugin-check
     runs-on: macos-latest
     strategy:
       matrix:
