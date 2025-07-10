@@ -9,6 +9,9 @@ name: build
 on: 
   workflow_dispatch: 
   workflow_call:
+  pull_request:
+    branches:
+      - migrate-release-to-crt
   push:
     branches:
       - main
