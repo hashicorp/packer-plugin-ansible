@@ -87,16 +87,15 @@ event "promote-production" {
   }
 }
 
-# TODO: Trigger the integrations api to notify release which updates docs
-# event "post-publish-website" {
-#   depends = ["promote-production-packaging"]
-#   action "post-publish-website" {
-#     organization = "hashicorp"
-#     repository = "crt-workflows-common"
-#     workflow = "post-publish-website"
-#   }
-#
-#   notification {
-#     on = "always"
-#   }
-# }
+event "post-publish-website" {
+  depends = ["promote-production"]
+  action "post-publish-website" {
+    organization = "hashicorp"
+    repository = "packer-plugin-ansible"
+    workflow = "notify-integration-release-via-manual.yaml"
+  }
+
+  notification {
+    on = "always"
+  }
+}
