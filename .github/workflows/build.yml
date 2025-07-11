@@ -137,7 +137,7 @@ jobs:
           CGO_ENABLED: "0"
         uses: hashicorp/actions-go-build@v1
         with:
-          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_v${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
+          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
           product_name: ${{ env.REPO_NAME }}
           product_version: ${{ needs.set-product-version.outputs.product-version }}
           go_version: ${{ matrix.go }}
@@ -173,7 +173,7 @@ jobs:
           CGO_ENABLED: "0"
         uses: hashicorp/actions-go-build@v1
         with:
-          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_v${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
+          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
           product_name: ${{ env.REPO_NAME }}
           product_version: ${{ needs.set-product-version.outputs.product-version }}
           go_version: ${{ matrix.go }}
@@ -208,7 +208,7 @@ jobs:
           CGO_ENABLED: "0"
         uses: hashicorp/actions-go-build@v1
         with:
-          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_v${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
+          bin_name: ${{ env.REPO_NAME }}_v${{ needs.set-product-version.outputs.product-version }}_${{ needs.plugin-check.outputs.api_version }}_${{ matrix.goos }}_${{ matrix.goarch }}
           product_name: ${{ env.REPO_NAME }}
           product_version: ${{ needs.set-product-version.outputs.product-version }}
           go_version: ${{ matrix.go }}
