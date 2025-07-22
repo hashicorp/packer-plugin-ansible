@@ -1,3 +1,23 @@
+## 1.2.0 (July 22, 2025)
+### IMPROVEMENTS:
+
+* core: added environment vars to ansible-galaxy execution
+  [GH-210](https://github.com/hashicorp/packer-plugin-ansible/pull/210)
+  
+* docs: update links to ansible wrapper guide for clarity and fix broken links
+  [GH-212](https://github.com/hashicorp/packer-plugin-ansible/pull/212)
+
+* docs: Update ansible script link to configure remoting for ansible
+  [GH-205](https://github.com/hashicorp/packer-plugin-ansible/pull/205)
+
+
+
+### BUG FIXES:
+
+* handle missing or invalid Host IP gracefully
+  [GH-213](https://github.com/hashicorp/packer-plugin-ansible/pull/213)
+
+
 ## 1.0.0 (June 14, 2021)
 The code base for this plugin has been stable since the Packer core split.
 We are marking this plugin as v1.0.0 to indicate that it is stable and ready for consumption via `packer init`.
