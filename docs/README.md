@@ -19,8 +19,8 @@ Alternatively, you can use `packer plugins install` to manage installation of th
 
 ```sh
 packer plugins install github.com/hashicorp/ansible
-
 ```
+
 **Note: Update to Packer Plugin Installation**
 
 With the new Packer release starting from version 1.13.2, the `packer init` command will automatically install official plugins from the [HashiCorp release site.](https://releases.hashicorp.com/)
