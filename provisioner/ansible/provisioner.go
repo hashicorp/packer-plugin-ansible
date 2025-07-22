@@ -771,6 +771,12 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 	ui.Message("Executing Ansible Galaxy")
 	cmd := exec.Command(p.config.GalaxyCommand, args...)
 
+	//Setting up AnsibleEnvVars at begining so additional checks can take them into account
+	cmd.Env = os.Environ()
+	if len(p.config.AnsibleEnvVars) > 0 {
+		cmd.Env = append(cmd.Env, p.config.AnsibleEnvVars...)
+	}
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		return err
