@@ -3,7 +3,7 @@
 
 schema = "1"
 
-project "packer-package-ansible" {
+project "packer-plugin-ansible" {
   team = "#proj-packer-releases"
   slack {
     notification_channel = "C032TD9KCMQ"
