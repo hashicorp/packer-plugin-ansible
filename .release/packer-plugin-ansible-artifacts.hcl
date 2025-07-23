@@ -10,7 +10,7 @@ artifacts {
     "packer-plugin-ansible_${version}_linux_amd64.zip",
     "packer-plugin-ansible_${version}_linux_arm.zip",
     "packer-plugin-ansible_${version}_linux_arm64.zip",
-    "packer-plugin-ansible_${version}_illumos_amd64.zip"
+    "packer-plugin-ansible_${version}_illumos_amd64.zip",
     "packer-plugin-ansible_${version}_netbsd_386.zip",
     "packer-plugin-ansible_${version}_netbsd_amd64.zip",
     "packer-plugin-ansible_${version}_netbsd_arm.zip",
