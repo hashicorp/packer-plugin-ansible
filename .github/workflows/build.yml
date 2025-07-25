@@ -229,11 +229,13 @@ jobs:
       - name: create-manifest-json
         id: create-manifest-json
         run: |
+          API_VERSION="${{ needs.plugin-check.outputs.api_version }}"
+          CLEAN_API_VERSION="${API_VERSION#x}"
           cat > ${{ env.REPO_NAME }}_${{ needs.set-product-version.outputs.product-version }}_manifest.json << EOF
           {
             "version": "${{ needs.set-product-version.outputs.product-version }}",
             "metadata": {
-              "protocol_version": "${{ needs.plugin-check.outputs.api_version }}"
+              "protocol_version": "${CLEAN_API_VERSION}"
             }
           }
           EOF
