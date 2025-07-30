@@ -1,4 +1,4 @@
-## 1.1.4 (July 22, 2025)
+## 1.1.4 (July 30, 2025)
 ### IMPROVEMENTS:
 
 * core: added environment vars to ansible-galaxy execution
@@ -10,6 +10,7 @@
 * docs: Update ansible script link to configure remoting for ansible
   [GH-205](https://github.com/hashicorp/packer-plugin-ansible/pull/205)
 
+* Updated plugin release process: Plugin binaries are now published on the HashiCorp official [release site](https://releases.hashicorp.com/packer-plugin-ansible), ensuring a secure and standardized delivery pipeline.
 
 
 ### BUG FIXES:
