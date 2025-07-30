@@ -1,4 +1,4 @@
-## 1.2.0 (July 22, 2025)
+## 1.1.4 (July 22, 2025)
 ### IMPROVEMENTS:
 
 * core: added environment vars to ansible-galaxy execution
