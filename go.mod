@@ -6,7 +6,7 @@ toolchain go1.23.7
 
 require (
 	github.com/hashicorp/hcl/v2 v2.19.1
-	github.com/hashicorp/packer-plugin-sdk v0.6.2
+	github.com/hashicorp/packer-plugin-sdk v0.6.3
 	github.com/stretchr/testify v1.10.0
 	github.com/zclconf/go-cty v1.13.3
 	golang.org/x/crypto v0.36.0
