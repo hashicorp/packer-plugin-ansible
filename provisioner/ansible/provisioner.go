@@ -937,7 +937,9 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 			continue
 		}
 		if strings.Contains(strings.ToLower(args[0]), "password") ||
-			strings.Contains(strings.ToLower(args[0]), "secret") {
+			strings.Contains(strings.ToLower(args[0]), "secret") ||
+			strings.Contains(strings.ToLower(args[0]), "token") ||
+			strings.Contains(strings.ToLower(args[0]), "key") {
 			sanitized = strings.Replace(sanitized,
 				args[1], "*****", -1)
 		}
