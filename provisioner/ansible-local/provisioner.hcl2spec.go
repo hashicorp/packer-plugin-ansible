@@ -18,6 +18,12 @@ type FlatConfig struct {
 	PackerOnError         *string           `mapstructure:"packer_on_error" cty:"packer_on_error" hcl:"packer_on_error"`
 	PackerUserVars        map[string]string `mapstructure:"packer_user_variables" cty:"packer_user_variables" hcl:"packer_user_variables"`
 	PackerSensitiveVars   []string          `mapstructure:"packer_sensitive_variables" cty:"packer_sensitive_variables" hcl:"packer_sensitive_variables"`
+	GalaxyFile            *string           `mapstructure:"galaxy_file" cty:"galaxy_file" hcl:"galaxy_file"`
+	GalaxyCommand         *string           `mapstructure:"galaxy_command" cty:"galaxy_command" hcl:"galaxy_command"`
+	GalaxyForceInstall    *bool             `mapstructure:"galaxy_force_install" cty:"galaxy_force_install" hcl:"galaxy_force_install"`
+	GalaxyRolesPath       *string           `mapstructure:"galaxy_roles_path" cty:"galaxy_roles_path" hcl:"galaxy_roles_path"`
+	GalaxyCollectionsPath *string           `mapstructure:"galaxy_collections_path" cty:"galaxy_collections_path" hcl:"galaxy_collections_path"`
+	GalaxyForceWithDeps   *bool             `mapstructure:"galaxy_force_with_deps" cty:"galaxy_force_with_deps" hcl:"galaxy_force_with_deps"`
 	Command               *string           `mapstructure:"command" cty:"command" hcl:"command"`
 	ExtraArguments        []string          `mapstructure:"extra_arguments" cty:"extra_arguments" hcl:"extra_arguments"`
 	GroupVars             *string           `mapstructure:"group_vars" cty:"group_vars" hcl:"group_vars"`
@@ -32,11 +38,6 @@ type FlatConfig struct {
 	CleanStagingDir       *bool             `mapstructure:"clean_staging_directory" cty:"clean_staging_directory" hcl:"clean_staging_directory"`
 	InventoryFile         *string           `mapstructure:"inventory_file" cty:"inventory_file" hcl:"inventory_file"`
 	InventoryGroups       []string          `mapstructure:"inventory_groups" cty:"inventory_groups" hcl:"inventory_groups"`
-	GalaxyFile            *string           `mapstructure:"galaxy_file" cty:"galaxy_file" hcl:"galaxy_file"`
-	GalaxyCommand         *string           `mapstructure:"galaxy_command" cty:"galaxy_command" hcl:"galaxy_command"`
-	GalaxyForceInstall    *bool             `mapstructure:"galaxy_force_install" cty:"galaxy_force_install" hcl:"galaxy_force_install"`
-	GalaxyRolesPath       *string           `mapstructure:"galaxy_roles_path" cty:"galaxy_roles_path" hcl:"galaxy_roles_path"`
-	GalaxyCollectionsPath *string           `mapstructure:"galaxy_collections_path" cty:"galaxy_collections_path" hcl:"galaxy_collections_path"`
 }
 
 // FlatMapstructure returns a new FlatConfig.
@@ -59,6 +60,12 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"packer_on_error":            &hcldec.AttrSpec{Name: "packer_on_error", Type: cty.String, Required: false},
 		"packer_user_variables":      &hcldec.AttrSpec{Name: "packer_user_variables", Type: cty.Map(cty.String), Required: false},
 		"packer_sensitive_variables": &hcldec.AttrSpec{Name: "packer_sensitive_variables", Type: cty.List(cty.String), Required: false},
+		"galaxy_file":                &hcldec.AttrSpec{Name: "galaxy_file", Type: cty.String, Required: false},
+		"galaxy_command":             &hcldec.AttrSpec{Name: "galaxy_command", Type: cty.String, Required: false},
+		"galaxy_force_install":       &hcldec.AttrSpec{Name: "galaxy_force_install", Type: cty.Bool, Required: false},
+		"galaxy_roles_path":          &hcldec.AttrSpec{Name: "galaxy_roles_path", Type: cty.String, Required: false},
+		"galaxy_collections_path":    &hcldec.AttrSpec{Name: "galaxy_collections_path", Type: cty.String, Required: false},
+		"galaxy_force_with_deps":     &hcldec.AttrSpec{Name: "galaxy_force_with_deps", Type: cty.Bool, Required: false},
 		"command":                    &hcldec.AttrSpec{Name: "command", Type: cty.String, Required: false},
 		"extra_arguments":            &hcldec.AttrSpec{Name: "extra_arguments", Type: cty.List(cty.String), Required: false},
 		"group_vars":                 &hcldec.AttrSpec{Name: "group_vars", Type: cty.String, Required: false},
@@ -73,11 +80,6 @@ func (*FlatConfig) HCL2Spec() map[string]hcldec.Spec {
 		"clean_staging_directory":    &hcldec.AttrSpec{Name: "clean_staging_directory", Type: cty.Bool, Required: false},
 		"inventory_file":             &hcldec.AttrSpec{Name: "inventory_file", Type: cty.String, Required: false},
 		"inventory_groups":           &hcldec.AttrSpec{Name: "inventory_groups", Type: cty.List(cty.String), Required: false},
-		"galaxy_file":                &hcldec.AttrSpec{Name: "galaxy_file", Type: cty.String, Required: false},
-		"galaxy_command":             &hcldec.AttrSpec{Name: "galaxy_command", Type: cty.String, Required: false},
-		"galaxy_force_install":       &hcldec.AttrSpec{Name: "galaxy_force_install", Type: cty.Bool, Required: false},
-		"galaxy_roles_path":          &hcldec.AttrSpec{Name: "galaxy_roles_path", Type: cty.String, Required: false},
-		"galaxy_collections_path":    &hcldec.AttrSpec{Name: "galaxy_collections_path", Type: cty.String, Required: false},
 	}
 	return s
 }
