@@ -1,3 +1,28 @@
+## 1.1.5 (June 16, 2026)
+### IMPROVEMENTS:
+
+* deps: bump packer-plugin-sdk (0.6.2 -> 0.6.4 -> 0.6.9)
+  [GH-242](https://github.com/hashicorp/packer-plugin-ansible/pull/242)
+  [GH-258](https://github.com/hashicorp/packer-plugin-ansible/pull/258)
+
+* security/deps: upgrade Azure NTLM, go-jose, and golang.org/x/crypto; include authorization-bypass go.mod updates
+  [GH-260](https://github.com/hashicorp/packer-plugin-ansible/pull/260)
+  [GH-245](https://github.com/hashicorp/packer-plugin-ansible/pull/245)
+  [GH-250](https://github.com/hashicorp/packer-plugin-ansible/pull/250)
+
+* ci/release: add backport workflow and prepare 1.1.5-dev release metadata
+  [GH-241](https://github.com/hashicorp/packer-plugin-ansible/pull/241)
+  [GH-238](https://github.com/hashicorp/packer-plugin-ansible/pull/238)
+
+* build/compliance: remove illumos builds and update copyright/license headers
+  [GH-235](https://github.com/hashicorp/packer-plugin-ansible/pull/235)
+  [GH-244](https://github.com/hashicorp/packer-plugin-ansible/pull/244)
+
+### BUG FIXES:
+
+* core: fix golangci-lint staticcheck and errcheck findings in ansible provisioner
+
+
 ## 1.1.4 (July 30, 2025)
 ### IMPROVEMENTS:
 
