@@ -1,7 +1,7 @@
-# Copyright (c) HashiCorp, Inc.
+# Copyright IBM Corp. 2013, 2025
 # SPDX-License-Identifier: MPL-2.0
 
-schema = "1"
+schema = "2"
 
 project "packer-plugin-ansible" {
   team = "#proj-packer-releases"

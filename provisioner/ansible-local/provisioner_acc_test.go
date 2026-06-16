@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright IBM Corp. 2013, 2025
 // SPDX-License-Identifier: MPL-2.0
 
 package ansiblelocal
@@ -6,7 +6,7 @@ package ansiblelocal
 import (
 	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -39,9 +39,11 @@ func TestAccAnsibleLocalProvisioner_Playbookdir(t *testing.T) {
 			if err != nil {
 				return fmt.Errorf("Unable find %s", logfile)
 			}
-			defer logs.Close()
+			defer func() {
+				_ = logs.Close()
+			}()
 
-			logsBytes, err := ioutil.ReadAll(logs)
+			logsBytes, err := io.ReadAll(logs)
 			if err != nil {
 				return fmt.Errorf("Unable to read %s", logfile)
 			}
@@ -74,9 +76,11 @@ func TestAccAnsibleLocalProvisioner_Playbookfiles(t *testing.T) {
 			if err != nil {
 				return fmt.Errorf("Unable find %s", logfile)
 			}
-			defer logs.Close()
+			defer func() {
+				_ = logs.Close()
+			}()
 
-			logsBytes, err := ioutil.ReadAll(logs)
+			logsBytes, err := io.ReadAll(logs)
 			if err != nil {
 				return fmt.Errorf("Unable to read %s", logfile)
 			}
@@ -118,7 +122,7 @@ func testProvisionerProvisionDockerWithPlaybookFiles(t *testing.T, templateStrin
 		Template: templateString,
 		Check: func(a []packersdk.Artifact) error {
 
-			actualContent, err := ioutil.ReadFile("hello_world")
+			actualContent, err := os.ReadFile("hello_world")
 			if err != nil {
 				return fmt.Errorf("Expected file not found: %s", err)
 			}
