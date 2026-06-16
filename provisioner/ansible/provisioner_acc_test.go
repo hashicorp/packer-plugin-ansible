@@ -6,7 +6,7 @@ package ansible
 import (
 	_ "embed"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -41,9 +41,11 @@ func TestAccAnsibleProvisioner_basic(t *testing.T) {
 			if err != nil {
 				return fmt.Errorf("Unable find %s", logfile)
 			}
-			defer logs.Close()
+			defer func() {
+				_ = logs.Close()
+			}()
 
-			logsBytes, err := ioutil.ReadAll(logs)
+			logsBytes, err := io.ReadAll(logs)
 			if err != nil {
 				return fmt.Errorf("Unable to read %s", logfile)
 			}

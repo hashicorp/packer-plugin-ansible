@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -446,7 +445,7 @@ func (p *Provisioner) getVersion() error {
 }
 
 func (p *Provisioner) setupAdapter(ui packersdk.Ui, comm packersdk.Communicator) (string, error) {
-	ui.Message("Setting up proxy adapter for Ansible....")
+	ui.Say("Setting up proxy adapter for Ansible....")
 
 	k, err := newUserKey(p.config.SSHAuthorizedKeyFile, p.config.AdapterKeyType)
 	if err != nil {
@@ -531,7 +530,7 @@ const DefaultWinRMInventoryFilev2 = "{{ .HostAlias}} ansible_host={{ .Host }} an
 
 func (p *Provisioner) createInventoryFile() error {
 	log.Printf("Creating inventory file for Ansible run...")
-	tf, err := ioutil.TempFile(p.config.InventoryDirectory, "packer-provisioner-ansible")
+	tf, err := os.CreateTemp(p.config.InventoryDirectory, "packer-provisioner-ansible")
 	if err != nil {
 		return fmt.Errorf("Error preparing inventory file: %s", err)
 	}
@@ -570,19 +569,29 @@ func (p *Provisioner) createInventoryFile() error {
 	}
 
 	for _, group := range p.config.Groups {
-		fmt.Fprintf(w, "[%s]\n%s", group, host)
+		if _, err := fmt.Fprintf(w, "[%s]\n%s", group, host); err != nil {
+			log.Printf("[TRACE] error writing group %q to generated inventory file: %s", group, err)
+		}
 	}
 
 	for _, group := range p.config.EmptyGroups {
-		fmt.Fprintf(w, "[%s]\n", group)
+		if _, err := fmt.Fprintf(w, "[%s]\n", group); err != nil {
+			log.Printf("[TRACE] error writing empty group %q to generated inventory file: %s", group, err)
+		}
 	}
 
 	if err := w.Flush(); err != nil {
-		tf.Close()
-		os.Remove(tf.Name())
+		if closeErr := tf.Close(); closeErr != nil {
+			log.Printf("[TRACE] error closing generated inventory file: %s", closeErr)
+		}
+		if removeErr := os.Remove(tf.Name()); removeErr != nil {
+			log.Printf("[TRACE] error removing generated inventory file: %s", removeErr)
+		}
 		return fmt.Errorf("Error preparing inventory file: %s", err)
 	}
-	tf.Close()
+	if closeErr := tf.Close(); closeErr != nil {
+		log.Printf("[TRACE] error closing generated inventory file: %s", closeErr)
+	}
 	p.config.InventoryFile = tf.Name()
 
 	return nil
@@ -648,13 +657,15 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 
 		// Remove the private key file
 		if len(privKeyFile) > 0 {
-			defer os.Remove(privKeyFile)
+			defer func() {
+				_ = os.Remove(privKeyFile)
+			}()
 		}
 	} else {
 		connType := generatedData["ConnType"].(string)
 		switch connType {
 		case "ssh":
-			ui.Message("Not using Proxy adapter for Ansible run:\n" +
+			ui.Say("Not using Proxy adapter for Ansible run:\n" +
 				"\tUsing ssh keys from Packer communicator...")
 			// In this situation, we need to make sure we have the
 			// private key we actually use to access the instance.
@@ -686,7 +697,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 				p.config.User = generatedData["User"].(string)
 			}
 		case "winrm":
-			ui.Message("Not using Proxy adapter for Ansible run:\n" +
+			ui.Say("Not using Proxy adapter for Ansible run:\n" +
 				"\tUsing WinRM Password from Packer communicator...")
 		}
 	}
@@ -700,7 +711,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 		if !p.config.KeepInventoryFile {
 			// Delete the generated inventory file
 			defer func() {
-				os.Remove(p.config.InventoryFile)
+				_ = os.Remove(p.config.InventoryFile)
 				p.config.InventoryFile = ""
 			}()
 		}
@@ -742,7 +753,7 @@ func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator
 	}
 
 	// Search galaxy_file for roles and collections keywords
-	f, err := ioutil.ReadFile(galaxyFile)
+	f, err := os.ReadFile(galaxyFile)
 	if err != nil {
 		return err
 	}
@@ -768,10 +779,10 @@ func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator
 
 // Intended to be invoked from p.executeGalaxy depending on the Ansible Galaxy parameters passed to Packer
 func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm packersdk.Communicator) error {
-	ui.Message("Executing Ansible Galaxy")
+	ui.Say("Executing Ansible Galaxy")
 	cmd := exec.Command(p.config.GalaxyCommand, args...)
 
-	//Setting up AnsibleEnvVars at begining so additional checks can take them into account
+	// Setting up AnsibleEnvVars at beginning so additional checks can take them into account
 	cmd.Env = os.Environ()
 	if len(p.config.AnsibleEnvVars) > 0 {
 		cmd.Env = append(cmd.Env, p.config.AnsibleEnvVars...)
@@ -792,7 +803,7 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 			line, err := reader.ReadString('\n')
 			if line != "" {
 				line = strings.TrimRightFunc(line, unicode.IsSpace)
-				ui.Message(line)
+				ui.Say(line)
 			}
 			if err != nil {
 				if err == io.EOF {
@@ -823,7 +834,7 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 func (p *Provisioner) createCmdArgs(httpAddr, inventory, playbook, privKeyFile string) (args []string, envVars []string) {
 	args = []string{}
 
-	//Setting up AnsibleEnvVars at begining so additional checks can take them into account
+	// Setting up AnsibleEnvVars at beginning so additional checks can take them into account
 	if len(p.config.AnsibleEnvVars) > 0 {
 		envVars = append(envVars, p.config.AnsibleEnvVars...)
 	}
@@ -910,7 +921,7 @@ func (p *Provisioner) executeAnsible(ui packersdk.Ui, comm packersdk.Communicato
 			line, err := reader.ReadString('\n')
 			if line != "" {
 				line = strings.TrimRightFunc(line, unicode.IsSpace)
-				ui.Message(line)
+				ui.Say(line)
 			}
 			if err != nil {
 				if err == io.EOF {
@@ -997,7 +1008,7 @@ type userKey struct {
 func newUserKey(pubKeyFile string, keyType string) (*userKey, error) {
 	userKey := new(userKey)
 	if len(pubKeyFile) > 0 {
-		pubKeyBytes, err := ioutil.ReadFile(pubKeyFile)
+		pubKeyBytes, err := os.ReadFile(pubKeyFile)
 		if err != nil {
 			return nil, errors.New("Failed to read public key")
 		}
@@ -1097,7 +1108,7 @@ func newSigner(privKeyFile string, keyType string) (*signer, error) {
 	signer := new(signer)
 
 	if len(privKeyFile) > 0 {
-		privateBytes, err := ioutil.ReadFile(privKeyFile)
+		privateBytes, err := os.ReadFile(privKeyFile)
 		if err != nil {
 			return nil, errors.New("Failed to load private host key")
 		}
