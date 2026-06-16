@@ -5,7 +5,6 @@ package ansiblelocal
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,11 +26,16 @@ func TestProvisionerPrepare_Defaults(t *testing.T) {
 	var p Provisioner
 	config := testConfig()
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() {
+		_ = os.Remove(playbook_file.Name())
+	}()
 
 	config["playbook_file"] = playbook_file.Name()
 	err = p.Prepare(config)
@@ -60,11 +64,14 @@ func TestProvisionerPrepare_PlaybookFile(t *testing.T) {
 		t.Fatal("should have error")
 	}
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(playbook_file.Name()) }()
 
 	config["playbook_file"] = playbook_file.Name()
 	err = p.Prepare(config)
@@ -89,11 +96,14 @@ func TestProvisionerPrepare_PlaybookFiles(t *testing.T) {
 		t.Fatal("should have error")
 	}
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(playbook_file.Name()) }()
 
 	config["playbook_file"] = playbook_file.Name()
 	config["playbook_files"] = []string{"some_other_file"}
@@ -144,11 +154,11 @@ func TestProvisionerProvision_PlaybookFilesWithPlaybookDir(t *testing.T) {
 	var p Provisioner
 	config := testConfig()
 
-	playbook_dir, err := ioutil.TempDir("", "")
+	playbook_dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("Failed to create playbook_dir: %s", err)
 	}
-	defer os.RemoveAll(playbook_dir)
+	defer func() { _ = os.RemoveAll(playbook_dir) }()
 	playbooks := createTempFiles(playbook_dir, 3)
 
 	playbookNames := make([]string, 0, len(playbooks))
@@ -189,11 +199,14 @@ func TestProvisionerPrepare_InventoryFile(t *testing.T) {
 		t.Fatal("should have error")
 	}
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(playbook_file.Name()) }()
 
 	config["playbook_file"] = playbook_file.Name()
 	err = p.Prepare(config)
@@ -201,11 +214,14 @@ func TestProvisionerPrepare_InventoryFile(t *testing.T) {
 		t.Fatalf("err: %s", err)
 	}
 
-	inventory_file, err := ioutil.TempFile("", "inventory")
+	inventory_file, err := os.CreateTemp("", "inventory")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(inventory_file.Name())
+	if err := inventory_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(inventory_file.Name()) }()
 
 	config["inventory_file"] = inventory_file.Name()
 	err = p.Prepare(config)
@@ -229,11 +245,14 @@ func TestProvisionerPrepare_Dirs(t *testing.T) {
 		t.Fatal("should have error")
 	}
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(playbook_file.Name()) }()
 
 	config["playbook_file"] = playbook_file.Name()
 	err = p.Prepare(config)
@@ -294,11 +313,14 @@ func TestProvisionerPrepare_CleanStagingDir(t *testing.T) {
 	var p Provisioner
 	config := testConfig()
 
-	playbook_file, err := ioutil.TempFile("", "playbook")
+	playbook_file, err := os.CreateTemp("", "playbook")
 	if err != nil {
 		t.Fatalf("err: %s", err)
 	}
-	defer os.Remove(playbook_file.Name())
+	if err := playbook_file.Close(); err != nil {
+		t.Fatalf("err: %s", err)
+	}
+	defer func() { _ = os.Remove(playbook_file.Name()) }()
 
 	config["playbook_file"] = playbook_file.Name()
 	config["clean_staging_directory"] = true
@@ -362,8 +384,11 @@ func testConfig() map[string]interface{} {
 }
 
 func createTempFile(dir string) string {
-	file, err := ioutil.TempFile(dir, "")
+	file, err := os.CreateTemp(dir, "")
 	if err != nil {
+		panic(fmt.Sprintf("err: %s", err))
+	}
+	if err := file.Close(); err != nil {
 		panic(fmt.Sprintf("err: %s", err))
 	}
 	return file.Name()
@@ -375,7 +400,7 @@ func createTempFiles(dir string, numFiles int) []string {
 		// Cleanup the files if not all were created.
 		if len(files) < numFiles {
 			for _, file := range files {
-				os.Remove(file)
+				_ = os.Remove(file)
 			}
 		}
 	}()
@@ -388,6 +413,6 @@ func createTempFiles(dir string, numFiles int) []string {
 
 func removeFiles(files ...string) {
 	for _, file := range files {
-		os.Remove(file)
+		_ = os.Remove(file)
 	}
 }

@@ -9,7 +9,6 @@ package ansiblelocal
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -318,19 +317,19 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	p.generatedData = generatedData
 
 	if len(p.config.PlaybookDir) > 0 {
-		ui.Message("Uploading Playbook directory to Ansible staging directory...")
+		ui.Say("Uploading Playbook directory to Ansible staging directory...")
 		if err := p.uploadDir(ui, comm, p.config.StagingDir, p.config.PlaybookDir); err != nil {
 			return fmt.Errorf("Error uploading playbook_dir directory: %s", err)
 		}
 	} else {
-		ui.Message("Creating Ansible staging directory...")
+		ui.Say("Creating Ansible staging directory...")
 		if err := p.createDir(ui, comm, p.config.StagingDir); err != nil {
 			return fmt.Errorf("Error creating staging directory: %s", err)
 		}
 	}
 
 	if p.config.PlaybookFile != "" {
-		ui.Message("Uploading main Playbook file...")
+		ui.Say("Uploading main Playbook file...")
 		src := p.config.PlaybookFile
 		dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(src)))
 		if err := p.uploadFile(ui, comm, dst, src); err != nil {
@@ -345,7 +344,9 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 		if err != nil {
 			return fmt.Errorf("Error preparing inventory file: %s", err)
 		}
-		defer os.Remove(tf.Name())
+		defer func() {
+			_ = os.Remove(tf.Name())
+		}()
 		if len(p.config.InventoryGroups) != 0 {
 			content := ""
 			for _, group := range p.config.InventoryGroups {
@@ -356,10 +357,12 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 			_, err = tf.Write([]byte("127.0.0.1"))
 		}
 		if err != nil {
-			tf.Close()
+			_ = tf.Close()
 			return fmt.Errorf("Error preparing inventory file: %s", err)
 		}
-		tf.Close()
+		if err := tf.Close(); err != nil {
+			return fmt.Errorf("Error preparing inventory file: %s", err)
+		}
 		p.config.InventoryFile = tf.Name()
 		defer func() {
 			p.config.InventoryFile = ""
@@ -367,7 +370,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.GalaxyFile) > 0 {
-		ui.Message("Uploading galaxy file...")
+		ui.Say("Uploading galaxy file...")
 		src := p.config.GalaxyFile
 		dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(src)))
 		if err := p.uploadFile(ui, comm, dst, src); err != nil {
@@ -375,7 +378,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 		}
 	}
 
-	ui.Message("Uploading inventory file...")
+	ui.Say("Uploading inventory file...")
 	src := p.config.InventoryFile
 	dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Base(src)))
 	if err := p.uploadFile(ui, comm, dst, src); err != nil {
@@ -383,7 +386,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.GroupVars) > 0 {
-		ui.Message("Uploading group_vars directory...")
+		ui.Say("Uploading group_vars directory...")
 		src := p.config.GroupVars
 		dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, "group_vars"))
 		if err := p.uploadDir(ui, comm, dst, src); err != nil {
@@ -392,7 +395,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.HostVars) > 0 {
-		ui.Message("Uploading host_vars directory...")
+		ui.Say("Uploading host_vars directory...")
 		src := p.config.HostVars
 		dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, "host_vars"))
 		if err := p.uploadDir(ui, comm, dst, src); err != nil {
@@ -401,7 +404,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.RolePaths) > 0 {
-		ui.Message("Uploading role directories...")
+		ui.Say("Uploading role directories...")
 		for _, src := range p.config.RolePaths {
 			dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, "roles", filepath.Base(src)))
 			if err := p.uploadDir(ui, comm, dst, src); err != nil {
@@ -411,7 +414,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.CollectionPaths) > 0 {
-		ui.Message("Uploading collection directories...")
+		ui.Say("Uploading collection directories...")
 		for _, src := range p.config.CollectionPaths {
 			dst := filepath.ToSlash(filepath.Join(p.config.StagingDir, "collections", filepath.Base(src)))
 			if err := p.uploadDir(ui, comm, dst, src); err != nil {
@@ -421,7 +424,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if len(p.config.PlaybookPaths) > 0 {
-		ui.Message("Uploading additional Playbooks...")
+		ui.Say("Uploading additional Playbooks...")
 		playbookDir := filepath.ToSlash(filepath.Join(p.config.StagingDir, "playbooks"))
 		if err := p.createDir(ui, comm, playbookDir); err != nil {
 			return fmt.Errorf("Error creating playbooks directory: %s", err)
@@ -439,7 +442,7 @@ func (p *Provisioner) Provision(ctx context.Context, ui packersdk.Ui, comm packe
 	}
 
 	if p.config.CleanStagingDir {
-		ui.Message("Removing staging directory...")
+		ui.Say("Removing staging directory...")
 		if err := p.removeDir(ui, comm, p.config.StagingDir); err != nil {
 			return fmt.Errorf("Error removing staging directory: %s", err)
 		}
@@ -469,7 +472,7 @@ func (p *Provisioner) provisionPlaybookFiles(ui packersdk.Ui, comm packersdk.Com
 }
 
 func (p *Provisioner) provisionPlaybookFile(ui packersdk.Ui, comm packersdk.Communicator, playbookFile string) error {
-	ui.Message(fmt.Sprintf("Uploading playbook file: %s", playbookFile))
+	ui.Say(fmt.Sprintf("Uploading playbook file: %s", playbookFile))
 
 	remoteDir := filepath.ToSlash(filepath.Join(p.config.StagingDir, filepath.Dir(playbookFile)))
 	remotePlaybookFile := filepath.ToSlash(filepath.Join(p.config.StagingDir, playbookFile))
@@ -502,7 +505,7 @@ func (p *Provisioner) executeGalaxy(ui packersdk.Ui, comm packersdk.Communicator
 	}
 
 	// Search galaxy_file for roles and collections keywords
-	f, err := ioutil.ReadFile(p.config.GalaxyFile)
+	f, err := os.ReadFile(p.config.GalaxyFile)
 	if err != nil {
 		return err
 	}
@@ -531,7 +534,7 @@ func (p *Provisioner) invokeGalaxyCommand(args []string, ui packersdk.Ui, comm p
 	ctx := context.TODO()
 	command := fmt.Sprintf("cd %s && %s %s",
 		p.config.StagingDir, p.config.GalaxyCommand, strings.Join(args, " "))
-	ui.Message(fmt.Sprintf("Executing Ansible Galaxy: %s", command))
+	ui.Say(fmt.Sprintf("Executing Ansible Galaxy: %s", command))
 
 	cmd := &packersdk.RemoteCmd{
 		Command: command,
@@ -589,7 +592,7 @@ func (p *Provisioner) executeAnsiblePlaybook(
 	// Check if we have custom collections from either galaxy or locally. TODO: Abstract to function
 	// as we use the same check in executeGalaxy
 	if len(p.config.GalaxyFile) > 0 {
-		f, err := ioutil.ReadFile(p.config.GalaxyFile)
+		f, err := os.ReadFile(p.config.GalaxyFile)
 		if err != nil {
 			return err
 		}
@@ -620,7 +623,7 @@ func (p *Provisioner) executeAnsiblePlaybook(
 	command := fmt.Sprintf("cd %s && %s %s %s%s -c local -i %s",
 		p.config.StagingDir, env_vars, p.config.Command, playbookFile, extraArgs, inventory,
 	)
-	ui.Message(fmt.Sprintf("Executing Ansible: %s", command))
+	ui.Say(fmt.Sprintf("Executing Ansible: %s", command))
 	cmd := &packersdk.RemoteCmd{
 		Command: command,
 	}
@@ -669,7 +672,9 @@ func (p *Provisioner) uploadFile(ui packersdk.Ui, comm packersdk.Communicator, d
 	if err != nil {
 		return fmt.Errorf("Error opening: %s", err)
 	}
-	defer f.Close()
+	defer func() {
+		_ = f.Close()
+	}()
 
 	if err = comm.Upload(dst, f, nil); err != nil {
 		return fmt.Errorf("Error uploading %s: %s", src, err)
@@ -683,7 +688,7 @@ func (p *Provisioner) createDir(ui packersdk.Ui, comm packersdk.Communicator, di
 		Command: fmt.Sprintf("mkdir -p '%s'", dir),
 	}
 
-	ui.Message(fmt.Sprintf("Creating directory: %s", dir))
+	ui.Say(fmt.Sprintf("Creating directory: %s", dir))
 	if err := cmd.RunWithUi(ctx, comm, ui); err != nil {
 		return err
 	}
@@ -700,7 +705,7 @@ func (p *Provisioner) removeDir(ui packersdk.Ui, comm packersdk.Communicator, di
 		Command: fmt.Sprintf("rm -rf '%s'", dir),
 	}
 
-	ui.Message(fmt.Sprintf("Removing directory: %s", dir))
+	ui.Say(fmt.Sprintf("Removing directory: %s", dir))
 	if err := cmd.RunWithUi(ctx, comm, ui); err != nil {
 		return err
 	}
