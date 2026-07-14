@@ -1,3 +1,13 @@
+## 1.1.6 (July 14, 2026)
+### IMPROVEMENTS:
+
+* deps: bump packer-plugin-sdk (0.6.9 -> 0.6.10)
+  [GH-266](https://github.com/hashicorp/packer-plugin-ansible/pull/266)
+
+* security/deps: upgrade golang.org/x/crypto and golang.org/x/net; refresh related golang.org/x indirect modules
+  [GH-262](https://github.com/hashicorp/packer-plugin-ansible/pull/262)
+  [GH-267](https://github.com/hashicorp/packer-plugin-ansible/pull/267)
+
 ## 1.1.5 (June 16, 2026)
 ### IMPROVEMENTS:
 
