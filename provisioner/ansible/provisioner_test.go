@@ -907,3 +907,86 @@ func TestProvisionerPrepare_WinRMSSL(t *testing.T) {
 		})
 	}
 }
+
+func TestProvisionerGetVersion(t *testing.T) {
+	// Outputs of "ansible-playbook --version" for ansible-core 2.21.5 on the
+	// python:3.14 and python:3.15 images. On 3.15 ansible-core fails to import.
+	python314Stdout := `ansible-playbook [core 2.21.5]
+  config file = None
+  configured module search path = ['/root/.ansible/plugins/modules', '/usr/share/ansible/plugins/modules']
+  ansible python module location = /usr/local/lib/python3.14/site-packages/ansible
+  ansible collection location = /root/.ansible/collections:/usr/share/ansible/collections
+  executable location = /usr/local/bin/ansible-playbook
+  python version = 3.14.9 (main, Oct 21 2026, 22:34:10) [GCC 14.2.0] (/usr/local/bin/python3.14)
+  jinja version = 3.1.6
+  pyyaml version = 6.0.3 (with libyaml v0.2.5)`
+	python315Stderr := `Traceback (most recent call last):
+  File "/usr/local/bin/ansible-playbook", line 3, in <module>
+    from ansible.cli.playbook import main
+  File "/usr/local/lib/python3.15/site-packages/ansible/module_utils/_internal/_patches/__init__.py", line 45, in get_current_implementation
+    return getattr(cls.target_container, cls.target_attribute)
+AttributeError: module 'dataclasses' has no attribute '_is_type'`
+
+	cases := []struct {
+		name       string
+		script     string
+		version    string
+		majVersion uint
+		wantErr    []string
+	}{
+		{
+			name:       "legacy banner",
+			script:     "echo ansible 1.6.0",
+			version:    "1.6.0",
+			majVersion: 1,
+		},
+		{
+			name:       "ansible-core on python 3.14",
+			script:     "cat <<'EOF'\n" + python314Stdout + "\nEOF",
+			version:    "2.21.5",
+			majVersion: 2,
+		},
+		{
+			name:    "ansible-core on python 3.15",
+			script:  "cat >&2 <<'EOF'\n" + python315Stderr + "\nEOF\nexit 1",
+			wantErr: []string{"exit status 1", "AttributeError: module 'dataclasses' has no attribute '_is_type'"},
+		},
+		{
+			name:    "no version in output",
+			script:  "echo ansible",
+			wantErr: []string{"Could not find"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			stub := path.Join(t.TempDir(), "ansible-playbook")
+			err := os.WriteFile(stub, []byte("#!/usr/bin/env bash\n"+tc.script+"\n"), 0777)
+			if err != nil {
+				t.Fatalf("err: %s", err)
+			}
+
+			p := Provisioner{}
+			p.config.Command = stub
+			err = p.getVersion()
+			if len(tc.wantErr) == 0 {
+				if err != nil {
+					t.Fatalf("err: %s", err)
+				}
+				if p.ansibleVersion != tc.version || p.ansibleMajVersion != tc.majVersion {
+					t.Fatalf("got version %q (major %d), want %q (major %d)",
+						p.ansibleVersion, p.ansibleMajVersion, tc.version, tc.majVersion)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("should have error")
+			}
+			for _, want := range tc.wantErr {
+				if !strings.Contains(err.Error(), want) {
+					t.Fatalf("error %q does not contain %q", err.Error(), want)
+				}
+			}
+		})
+	}
+}

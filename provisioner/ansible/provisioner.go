@@ -420,6 +420,10 @@ func (p *Provisioner) Prepare(raws ...interface{}) error {
 func (p *Provisioner) getVersion() error {
 	out, err := exec.Command(p.config.Command, "--version").Output()
 	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
+			err = fmt.Errorf("%w\n%s", err, bytes.TrimSpace(exitErr.Stderr))
+		}
 		return fmt.Errorf(
 			"Error running \"%s --version\": %s", p.config.Command, err.Error())
 	}
